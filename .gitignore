@@ -1,0 +1,6 @@
+# General
+*.nix
+.env*
+
+# Added by goreleaser init:
+dist/

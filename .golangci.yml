@@ -1,0 +1,54 @@
+version: "2"
+
+run:
+  go: "1.25"
+
+linters:
+  default: all
+
+  disable:
+    - depguard
+    - mnd
+    - wsl # Replaced by wsl_v5
+    - cyclop # Revive handles this
+    - exhaustruct
+    # Stylistic preferences
+    - varnamelen
+    - noinlineerr
+    - ireturn
+
+  settings:
+    lll:
+      line-length: 140
+
+    tagliatelle:
+      case:
+        rules:
+          json: snake
+
+    revive:
+      enable-all-rules: true
+      rules:
+        - name: add-constant
+          disabled: true
+        - name: exported
+          disabled: true # Too annoying
+        - name: line-length-limit
+          disabled: true # We use lll for this
+        - name: package-comments
+          disabled: true # Too strict for a binary
+        - name: cyclomatic
+          arguments:
+            - 15
+        - name: cognitive-complexity
+          arguments:
+            - 15 # Yes, I'm aware this is insane, but whatever, this is a pet project
+
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
+    - golines
+    - swaggo
