@@ -10,17 +10,17 @@ This is an unofficial implementation of a Model Context Protocol (MCP) server to
 
 ## Getting Started
 
+Download the latest release from the [releases page](https://github.com/cyclimse/mcp_scaleway_functions/releases) or build it from source using Go.
+
 Run the MCP server:
 
 ```bash
-go run ./cmd/mcp
+./mcp_scaleway_functions
 ```
 
 By default, the MCP server runs with the SSE transport on `http://localhost:8080`, but you can also change it to use Standard I/O (stdio) transport via the `--transport stdio` flag.
 
-Configure your IDE to use the MCP server.
-
-Example with VSCode and GitHub Copilot:
+Then, configure your IDE to use the MCP server. Here's an example with VSCode and GitHub Copilot:
 
 ```jsonc
 // .vscode/mcp.json
@@ -44,7 +44,7 @@ You can use the standard [Scaleway environment variables](https://www.scaleway.c
 For instance, you can set a region to work in via the `SCW_DEFAULT_REGION` environment variable.
 
 ```bash
-SCW_DEFAULT_REGION=nl-ams go run ./cmd/mcp
+SCW_DEFAULT_REGION=nl-ams ./mcp_scaleway_functions
 ```
 
 ## Available Tools
