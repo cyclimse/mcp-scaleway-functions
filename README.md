@@ -1,6 +1,6 @@
 # Unofficial MCP Server for Scaleway Functions
 
-This is an unofficial implementation of a Model Context Protocol (MCP) server to manage and deploy [Scaleway Functions](https://www.scaleway.com/en/functions/) using the [Model Context Protocol (MCP)](https://modelcontextprotocol.org/) standard.
+This is an unofficial implementation of a Model Context Protocol (MCP) server to manage and deploy [Scaleway Serverless Functions](https://www.scaleway.com/en/serverless-functions/) using the [Model Context Protocol (MCP)](https://modelcontextprotocol.org/) standard.
 
 > [!CAUTION]
 > This project is unofficial and not affiliated with or endorsed by Scaleway.
