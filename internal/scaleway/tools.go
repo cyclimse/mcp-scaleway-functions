@@ -8,8 +8,66 @@ import (
 
 type Tools struct {
 	scwClient    *scw.Client
-	functionsAPI *function.API
+	functionsAPI FunctionAPI
 }
+
+//nolint:interfacebloat,inamedparam // Only meant for testing purposes.
+type FunctionAPI interface {
+	CreateNamespace(
+		*function.CreateNamespaceRequest,
+		...scw.RequestOption,
+	) (*function.Namespace, error)
+	WaitForNamespace(
+		*function.WaitForNamespaceRequest,
+		...scw.RequestOption,
+	) (*function.Namespace, error)
+	ListNamespaces(
+		*function.ListNamespacesRequest,
+		...scw.RequestOption,
+	) (*function.ListNamespacesResponse, error)
+	DeleteNamespace(
+		*function.DeleteNamespaceRequest,
+		...scw.RequestOption,
+	) (*function.Namespace, error)
+
+	CreateFunction(
+		*function.CreateFunctionRequest,
+		...scw.RequestOption,
+	) (*function.Function, error)
+	DeployFunction(
+		*function.DeployFunctionRequest,
+		...scw.RequestOption,
+	) (*function.Function, error)
+	GetFunction(*function.GetFunctionRequest, ...scw.RequestOption) (*function.Function, error)
+	ListFunctions(
+		*function.ListFunctionsRequest,
+		...scw.RequestOption,
+	) (*function.ListFunctionsResponse, error)
+	UpdateFunction(
+		*function.UpdateFunctionRequest,
+		...scw.RequestOption,
+	) (*function.Function, error)
+	DeleteFunction(
+		*function.DeleteFunctionRequest,
+		...scw.RequestOption,
+	) (*function.Function, error)
+
+	ListFunctionRuntimes(
+		*function.ListFunctionRuntimesRequest,
+		...scw.RequestOption,
+	) (*function.ListFunctionRuntimesResponse, error)
+
+	GetFunctionUploadURL(
+		*function.GetFunctionUploadURLRequest,
+		...scw.RequestOption,
+	) (*function.UploadURL, error)
+	GetFunctionDownloadURL(
+		*function.GetFunctionDownloadURLRequest,
+		...scw.RequestOption,
+	) (*function.DownloadURL, error)
+}
+
+var _ FunctionAPI = (*function.API)(nil)
 
 func NewTools(scwClient *scw.Client) *Tools {
 	return &Tools{

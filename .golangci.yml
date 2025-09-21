@@ -16,6 +16,7 @@ linters:
     - varnamelen
     - noinlineerr
     - ireturn
+    - testpackage
 
   settings:
     lll:
@@ -37,12 +38,21 @@ linters:
           disabled: true # We use lll for this
         - name: package-comments
           disabled: true # Too strict for a binary
+        - name: function-length
+          disabled: true # Handled by funlen
         - name: cyclomatic
           arguments:
             - 15
         - name: cognitive-complexity
           arguments:
             - 15 # Yes, I'm aware this is insane, but whatever, this is a pet project
+
+  exclusions:
+    rules:
+      - linters:
+          - funlen
+          - gochecknoglobals
+        path: (.+)_test\.go
 
 formatters:
   enable:
