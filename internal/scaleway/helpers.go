@@ -19,7 +19,7 @@ var (
 
 func getFunctionNamespaceByName(
 	ctx context.Context,
-	functionAPI *function.API,
+	functionAPI FunctionAPI,
 	name string,
 ) (*function.Namespace, error) {
 	resp, err := functionAPI.ListNamespaces(&function.ListNamespacesRequest{
@@ -40,7 +40,7 @@ func getFunctionNamespaceByName(
 
 func getFunctionByName(
 	ctx context.Context,
-	functionAPI *function.API,
+	functionAPI FunctionAPI,
 	name string,
 ) (*function.Function, error) {
 	resp, err := functionAPI.ListFunctions(&function.ListFunctionsRequest{
@@ -82,7 +82,7 @@ type WaitForFunctionCallback func(fun *function.Function)
 // Note: there is a nice [function.API.WaitForFunction] but it doesn't support a callback.
 func waitForFunction(
 	ctx context.Context,
-	functionAPI *function.API,
+	functionAPI FunctionAPI,
 	functionID string,
 	cb WaitForFunctionCallback,
 ) (*function.Function, error) {

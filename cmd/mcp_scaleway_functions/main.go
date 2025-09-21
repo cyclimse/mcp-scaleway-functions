@@ -59,14 +59,14 @@ func (cmd *serveCmd) Run(cliCtx *cliContext) error {
 		return fmt.Errorf("creating Scaleway client: %w", err)
 	}
 
-	if err := warnIfPermissionsTooOpen(context.Background(), logger, scwClient); err != nil {
+	if err := warnOnExcessivePermissions(context.Background(), logger, scwClient); err != nil {
 		return fmt.Errorf("warning about permissions: %w", err)
 	}
 
 	tools := scaleway.NewTools(scwClient)
 	server := mcp.NewServer(&mcp.Implementation{
-		Name:    "scaleway-functions",
-		Title:   "Scaleway Functions MCP Server",
+		Name:    "mcp_scaleway_functions",
+		Title:   "MCP Scaleway Serverless Functions",
 		Version: Version,
 	}, nil)
 
@@ -76,7 +76,7 @@ func (cmd *serveCmd) Run(cliCtx *cliContext) error {
 		slog.String("transport", cmd.Transport),
 	)
 
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
 	switch cmd.Transport {
@@ -168,27 +168,26 @@ func loadScalewayProfile(profileName string) (*scw.Profile, error) {
 	var p *scw.Profile
 
 	if profileName != "" {
-		// If the profile is overridden via the command line,
-		// we load it directly
+		// If the profile is overridden via the command line, we load it directly.
 		p, err = cfg.GetProfile(profileName)
 		if err != nil {
 			return nil, fmt.Errorf("getting profile %q: %w", profileName, err)
 		}
 	} else {
-		// Otherwise we load the active profile
+		// Otherwise, we load the active profile.
 		p, err = cfg.GetActiveProfile()
 		if err != nil {
 			return nil, fmt.Errorf("getting active profile: %w", err)
 		}
 	}
 
-	// finally, merge it with the environment variables overrides
+	// Finally, merge it with the environment variables overrides.
 	p = scw.MergeProfiles(p, scw.LoadEnvProfile())
 
 	return p, nil
 }
 
-func warnIfPermissionsTooOpen(
+func warnOnExcessivePermissions(
 	ctx context.Context,
 	logger *slog.Logger,
 	scwClient *scw.Client,
@@ -204,7 +203,7 @@ func warnIfPermissionsTooOpen(
 	}
 
 	// We don't have the permissions to list the projects, this is expected if the user
-	// is using an API key with limited permissions.
+	// is using an API key with the minimal required permissions.
 	if len(resp.Projects) == 0 {
 		return nil
 	}

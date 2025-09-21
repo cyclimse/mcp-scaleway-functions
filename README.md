@@ -1,4 +1,4 @@
-# Unofficial MCP Server for Scaleway Functions
+# MCP Scaleway Functions
 
 This is an unofficial implementation of a Model Context Protocol (MCP) server to manage and deploy [Scaleway Serverless Functions](https://www.scaleway.com/en/serverless-functions/) using the [Model Context Protocol (MCP)](https://modelcontextprotocol.org/) standard.
 
@@ -23,19 +23,18 @@ By default, the MCP server runs with the SSE transport on `http://localhost:8080
 Then, configure your IDE to use the MCP server. Here's an example with VSCode and GitHub Copilot:
 
 ```jsonc
-// .vscode/mcp.json
+// In .vscode/mcp.json
 {
 	"servers": {
-		"scaleway": {
+		"mcp_scaleway_functions": {
 			"url": "http://localhost:8080",
 			"type": "http",
 		}
 	},
-	"inputs": []
 }
 ```
 
-That's it 🎉! Have fun vibecoding and vibedevopsing as you please.
+That's it 🎉! Have fun vibecoding and vibedevoopsing as you please.
 
 ## Configuration
 

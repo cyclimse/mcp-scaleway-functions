@@ -37,20 +37,24 @@ func NewRuntimeFromSDK(r *function.Runtime) Runtime {
 }
 
 type Function struct {
-	ID           string `json:"id"`
-	Name         string `json:"name"`
-	Description  string `json:"description"`
-	Status       string `json:"status"`
-	ErrorMessage string `json:"error_message,omitempty"`
-	Runtime      string `json:"runtime"`
-	Endpoint     string `json:"endpoint,omitempty"`
+	ID           string   `json:"id"`
+	Name         string   `json:"name"`
+	NamespaceID  string   `json:"namespace_id"`
+	Description  string   `json:"description"`
+	Tags         []string `json:"tags,omitempty"`
+	Status       string   `json:"status"`
+	ErrorMessage string   `json:"error_message,omitempty"`
+	Runtime      string   `json:"runtime"`
+	Endpoint     string   `json:"endpoint,omitempty"`
 }
 
 func NewFunctionFromSDK(f *function.Function) Function {
 	return Function{
 		ID:           f.ID,
 		Name:         f.Name,
+		NamespaceID:  f.NamespaceID,
 		Description:  valueOrDefault(f.Description, ""),
+		Tags:         f.Tags,
 		Status:       f.Status.String(),
 		ErrorMessage: valueOrDefault(f.ErrorMessage, ""),
 		Runtime:      f.Runtime.String(),

@@ -1,4 +1,4 @@
-name: golangci-lint
+name: quality
 
 on:
   push:
@@ -8,11 +8,10 @@ on:
 
 permissions:
   contents: read
-  # Optional: allow read access to pull requests. Use with `only-new-issues` option.
   pull-requests: read
 
 jobs:
-  golangci:
+  lint:
     name: lint
     runs-on: ubuntu-latest
 
@@ -28,3 +27,19 @@ jobs:
         with:
           version: v2.4
 
+  test:
+    name: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+
+      - name: Install dependencies
+        run: go mod tidy
+
+      - name: Run tests
+        run: go tool gotestsum --format testdox
