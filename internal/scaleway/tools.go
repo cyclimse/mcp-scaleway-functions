@@ -92,4 +92,7 @@ func (t *Tools) Register(s *mcp.Server) {
 	mcp.AddTool(s, updateFunctionTool, t.UpdateFunction)
 
 	mcp.AddTool(s, deleteFunctionTool, t.DeleteFunction)
+
+	// Dependency tools
+	mcp.AddTool(s, addDependencyTool, t.AddDependency)
 }

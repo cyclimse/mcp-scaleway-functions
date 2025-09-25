@@ -48,14 +48,15 @@ SCW_DEFAULT_REGION=nl-ams ./mcp-scaleway-functions
 
 ## Available Tools
 
-| **Tool**                               | **Description**                                                                  |
-| -------------------------------------- | -------------------------------------------------------------------------------- |
-| `create_and_deploy_function_namespace` | Create and deploy a new function namespace.                                      |
-| `list_function_namespaces`             | List all function namespaces.                                                    |
-| `delete_function_namespace`            | Delete a function namespace.                                                     |
-| `list_functions`                       | List all functions in a namespace.                                               |
-| `list_function_runtimes`               | List all available function runtimes.                                            |
-| `create_and_deploy_function`           | Create and deploy a new function.                                                |
-| `update_function`                      | Update the code or the configuration of an existing function.                    |
-| `delete_function`                      | Delete a function.                                                               |
-| `download_function`                    | Download the code of a function. This is useful to work on an existing function. |
+| **Tool**                               | **Description**                                                                                                                   |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `create_and_deploy_function_namespace` | Create and deploy a new function namespace.                                                                                       |
+| `list_function_namespaces`             | List all function namespaces.                                                                                                     |
+| `delete_function_namespace`            | Delete a function namespace.                                                                                                      |
+| `list_functions`                       | List all functions in a namespace.                                                                                                |
+| `list_function_runtimes`               | List all available function runtimes.                                                                                             |
+| `create_and_deploy_function`           | Create and deploy a new function.                                                                                                 |
+| `update_function`                      | Update the code or the configuration of an existing function.                                                                     |
+| `delete_function`                      | Delete a function.                                                                                                                |
+| `download_function`                    | Download the code of a function. This is useful to work on an existing function.                                                  |
+| `add_dependency`                       | Add a dependency to a local function. Useful for dependencies that rely on native code and therefore need Docker to be installed. |
