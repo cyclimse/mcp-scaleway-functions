@@ -21,11 +21,6 @@ import (
 	"github.com/scaleway/scaleway-sdk-go/scw"
 )
 
-// Version is the current version of the server. It is set at build time.
-//
-//nolint:gochecknoglobals
-var Version = "dev"
-
 type cliContext struct {
 	Logger *slog.Logger
 }
@@ -54,7 +49,10 @@ func (cmd *serveCmd) Run(cliCtx *cliContext) error {
 		return fmt.Errorf("loading Scaleway profile: %w", err)
 	}
 
-	scwClient, err := scw.NewClient(scw.WithProfile(p))
+	scwClient, err := scw.NewClient(
+		scw.WithProfile(p),
+		scw.WithUserAgent(constants.UserAgent),
+	)
 	if err != nil {
 		return fmt.Errorf("creating Scaleway client: %w", err)
 	}
@@ -65,9 +63,9 @@ func (cmd *serveCmd) Run(cliCtx *cliContext) error {
 
 	tools := scaleway.NewTools(scwClient)
 	server := mcp.NewServer(&mcp.Implementation{
-		Name:    "mcp_scaleway_functions",
+		Name:    constants.ProjectName,
 		Title:   "MCP Scaleway Serverless Functions",
-		Version: Version,
+		Version: constants.Version,
 	}, nil)
 
 	tools.Register(server)
@@ -147,7 +145,10 @@ func main() {
 
 	ctx := kong.Parse(&cli)
 
-	logger := slog.New(tint.NewHandler(w, nil))
+	logger := slog.New(tint.NewHandler(w, nil)).With(
+		slog.String("component", "main"),
+		slog.String("version", constants.Version),
+	)
 	slog.SetDefault(slog.New(
 		tint.NewHandler(w, &tint.Options{
 			Level:      cli.LogLevel,

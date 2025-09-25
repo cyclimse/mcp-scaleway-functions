@@ -1,6 +1,6 @@
 version: 2
 
-project_name: mcp_scaleway_functions
+project_name: mcp-scaleway-functions
 
 before:
   hooks:
@@ -9,9 +9,9 @@ before:
 builds:
   - env:
       - CGO_ENABLED=0
-    main: ./cmd/mcp_scaleway_functions
+    main: ./cmd/mcp-scaleway-functions
     ldflags:
-      - -s -w -X main.Version={{.Version}}
+      - -s -w -X {{ .ModulePath }}/internal/constants.Version={{ .Version }}
     goos:
       - linux
       - windows
