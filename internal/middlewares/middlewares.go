@@ -3,6 +3,7 @@ package middlewares
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -86,7 +87,7 @@ func slogAttrFromResult(result mcp.Result) []any {
 func slogJSON(k string, v any) slog.Attr {
 	jsonBytes, err := json.Marshal(v)
 	if err != nil {
-		return slog.String(k, "<error marshaling to JSON>")
+		return slog.String(k, fmt.Sprintf("<error marshaling to JSON: %v>", err))
 	}
 
 	return slog.String(k, string(jsonBytes))
