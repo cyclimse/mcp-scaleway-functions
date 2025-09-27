@@ -98,8 +98,8 @@ github.com/moby/moby/api v1.52.0-beta.1 h1:r5U4U72E7xSHh4zX72ndY1mA/FOGiAPiGiz2a
 github.com/moby/moby/api v1.52.0-beta.1/go.mod h1:8sBV0soUREiudtow4vqJGOxa4GyHI5vLQmvgKdHq5Ok=
 github.com/moby/moby/client v0.1.0-beta.0 h1:eXzrwi0YkzLvezOBKHafvAWNmH1B9HFh4n13yb2QgFE=
 github.com/moby/moby/client v0.1.0-beta.0/go.mod h1:irAv8jRi4yKKBeND96Y+3AM9ers+KaJYk9Vmcm7loxs=
-github.com/modelcontextprotocol/go-sdk v0.7.0 h1:XEQfn3bDx2cAdSUKty3tYEMll5dtRgBUDX88Q65fai0=
-github.com/modelcontextprotocol/go-sdk v0.7.0/go.mod h1:nYtYQroQ2KQiM0/SbyEPUWQ6xs4B95gJjEalc9AQyOs=
+github.com/modelcontextprotocol/go-sdk v0.8.0 h1:jdsBtGzBLY287WKSIjYovOXAqtJkP+HtFQFKrZd4a6c=
+github.com/modelcontextprotocol/go-sdk v0.8.0/go.mod h1:nYtYQroQ2KQiM0/SbyEPUWQ6xs4B95gJjEalc9AQyOs=
 github.com/opencontainers/go-digest v1.0.0 h1:apOUWs51W5PlhuyGyz9FCeeBIOUDA/6nW8Oi/yOhh5U=
 github.com/opencontainers/go-digest v1.0.0/go.mod h1:0JzlMkj0TRzQZfJkVvzbP0HBR3IKzErnv2BNG4W4MAM=
 github.com/opencontainers/image-spec v1.1.1 h1:y0fUlFfIZhPF1W537XOLg0/fcx6zcHCJwooC2xJA040=
