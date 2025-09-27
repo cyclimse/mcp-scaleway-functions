@@ -1,6 +1,10 @@
 package scaleway
 
 import (
+	"fmt"
+	"sync"
+
+	"github.com/moby/moby/client"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	function "github.com/scaleway/scaleway-sdk-go/api/function/v1beta1"
 	"github.com/scaleway/scaleway-sdk-go/scw"
@@ -9,6 +13,12 @@ import (
 type Tools struct {
 	scwClient    *scw.Client
 	functionsAPI FunctionAPI
+
+	// Docker client is only used for the "add_dependency" tool, and since initialization
+	// can fail on some systems (e.g. when Docker is not installed/running), we only
+	// initialize it when needed, and only once.
+	loadDockerAPIOnce sync.Once
+	dockerAPI         client.APIClient
 }
 
 //nolint:interfacebloat,inamedparam // Only meant for testing purposes.
@@ -92,4 +102,22 @@ func (t *Tools) Register(s *mcp.Server) {
 	mcp.AddTool(s, updateFunctionTool, t.UpdateFunction)
 
 	mcp.AddTool(s, deleteFunctionTool, t.DeleteFunction)
+
+	// Dependency tools
+	mcp.AddTool(s, addDependencyTool, t.AddDependency)
+}
+
+//nolint:nonamedreturns // actually like it this way.
+func (t *Tools) loadDockerClient() (err error) {
+	t.loadDockerAPIOnce.Do(func() {
+		t.dockerAPI, err = client.NewClientWithOpts(
+			client.FromEnv,
+			client.WithAPIVersionNegotiation(),
+		)
+		if err != nil {
+			err = fmt.Errorf("initializing docker client: %w", err)
+		}
+	})
+
+	return err
 }

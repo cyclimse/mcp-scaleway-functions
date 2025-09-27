@@ -16,4 +16,7 @@ const (
 
 	// RequiredPermissionSet is the minimum permission set required for the Scaleway API key.
 	RequiredPermissionSet = "FunctionsFullAccess"
+
+	PublicRuntimesRegistry = "rg.fr-par.scw.cloud/scwfunctionsruntimes-public"
+	PythonPackageFolder    = "package"
 )
