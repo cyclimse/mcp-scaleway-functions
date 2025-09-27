@@ -47,7 +47,7 @@ Add a new server configuration in your `~/.config/crush/config.json` file:
 {
   "$schema": "https://charm.land/crush.json",
   "mcp": {
-    "scaleway": {
+    "scaleway-functions": {
       "type": "stdio",
       "command": "mcp-scaleway-functions",
       "args": ["--transport", "stdio"],
