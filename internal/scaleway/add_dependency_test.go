@@ -28,16 +28,22 @@ func (*mockDockerImageReader) Close() error {
 }
 
 var listRuntimesResponse = &function.ListFunctionRuntimesResponse{
+	// Reference: scw function runtime list
 	Runtimes: []*function.Runtime{
 		{
-			Name:     "python3.11",
+			Name:     "python3.13",
 			Language: "Python",
-			Version:  "3.11",
+			Version:  "3.13",
+		},
+		{
+			Name:     "node22",
+			Language: "Node",
+			Version:  "22",
 		},
 		{
 			// We support rust as a runtime, but not for adding dependencies
 			// through this tool.
-			Name:     "rust1.70",
+			Name:     "rust1.85",
 			Language: "Rust",
 		},
 	},
@@ -48,13 +54,18 @@ func TestTools_AddDependency(t *testing.T) {
 
 	rootDir := t.TempDir()
 
-	myFunctionDir := rootDir + "/my-function"
-	err := os.Mkdir(myFunctionDir, 0o750)
-	require.NoError(t, err)
-
+	myNodeFunctionDir := rootDir + "/my-node-function"
+	myPythonFunctionDir := rootDir + "/my-python-function"
 	myRustFunctionDir := rootDir + "/my-rust-function"
-	err = os.Mkdir(myRustFunctionDir, 0o750)
-	require.NoError(t, err)
+
+	for _, dir := range []string{
+		myNodeFunctionDir,
+		myPythonFunctionDir,
+		myRustFunctionDir,
+	} {
+		err := os.Mkdir(dir, 0o755)
+		require.NoError(t, err)
+	}
 
 	tt := []struct {
 		name            string
@@ -64,13 +75,30 @@ func TestTools_AddDependency(t *testing.T) {
 		wantError       require.ErrorAssertionFunc
 	}{
 		{
-			name: "success",
+			name: "success with node",
 			req: AddDependencyRequest{
-				Directory: myFunctionDir,
-				Runtime:   "python3.11",
+				Directory: myNodeFunctionDir,
+				Runtime:   "node22",
+				Package:   "sharp",
+			},
+			wantPulledImage: "node:22-alpine",
+			wantCmd: []string{
+				"npm",
+				"install",
+				"sharp",
+				"--prefix",
+				"/function",
+			},
+			wantError: require.NoError,
+		},
+		{
+			name: "success with python",
+			req: AddDependencyRequest{
+				Directory: myPythonFunctionDir,
+				Runtime:   "python3.13",
 				Package:   "requests",
 			},
-			wantPulledImage: constants.PublicRuntimesRegistry + "/python-dep:3.11",
+			wantPulledImage: constants.PublicRuntimesRegistry + "/python-dep:3.13",
 			wantCmd: []string{
 				"pip",
 				"install",
@@ -84,7 +112,7 @@ func TestTools_AddDependency(t *testing.T) {
 			name: "unsupported runtime",
 			req: AddDependencyRequest{
 				Directory: myRustFunctionDir,
-				Runtime:   "rust1.70",
+				Runtime:   "rust1.85",
 				Package:   "serde",
 			},
 			wantError: func(tt require.TestingT, err error, _ ...any) {
@@ -94,7 +122,7 @@ func TestTools_AddDependency(t *testing.T) {
 		{
 			name: "runtime not found",
 			req: AddDependencyRequest{
-				Directory: myFunctionDir,
+				Directory: myPythonFunctionDir,
 				Runtime:   "nonexistent-runtime",
 				Package:   "requests",
 			},
@@ -106,7 +134,7 @@ func TestTools_AddDependency(t *testing.T) {
 			name: "directory does not exist",
 			req: AddDependencyRequest{
 				Directory: "invalid-directory",
-				Runtime:   "python3.11",
+				Runtime:   "python3.13",
 				Package:   "requests",
 			},
 			wantError: func(tt require.TestingT, err error, _ ...any) {

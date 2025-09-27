@@ -9,13 +9,14 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/cyclimse/mcp-scaleway-functions/internal/constants"
-	"github.com/cyclimse/mcp-scaleway-functions/internal/std"
 	"github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/client"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	function "github.com/scaleway/scaleway-sdk-go/api/function/v1beta1"
 	"github.com/scaleway/scaleway-sdk-go/scw"
+
+	"github.com/cyclimse/mcp-scaleway-functions/internal/constants"
+	"github.com/cyclimse/mcp-scaleway-functions/internal/std"
 )
 
 var (
@@ -38,10 +39,14 @@ var (
 //nolint:gochecknoglobals
 var addDependencyTool = &mcp.Tool{
 	Name: "add_dependency",
-	Description: `Add a dependency to a Scaleway Function.
-	This uses the recommended way to include dependencies in a Scaleway Function, depending on the runtime.
-	The "package" argument is the name of the package to add, for example "requests" for Python or "axios" for Node.js.
-	This is essential for dependencies that rely on native libraries like "numpy" for Python or "sharp" for Node.js.
+	Description: `Add a native dependency to a Scaleway Function.
+	This uses a alpine-based Docker container to install the dependency in the function directory.
+	The "package" argument is the name of the package to add, for example "pydantic" for Python or "sharp" for Node.js.
+	
+	Note that for non-native dependencies you can (and may favor) add them through:
+	  - Python: "pip install <package> --target ./<function_directory>/package"
+	  - Node.js: "npm install <package> --prefix ./<function_directory>"
+
 	The provided "directory" must be an existing directory where the function code is located.`,
 }
 
@@ -92,8 +97,8 @@ func (t *Tools) AddDependency(
 		}
 
 		containerConfig, hostConfig = getPythonContainerConfigs(runtime, in.Directory, in.Package)
-	// case "node":
-	// 	containerConfig, hostConfig, err = getNodeContainerConfigs(in.Directory, in.Package)
+	case "node":
+		containerConfig, hostConfig, err = getNodeContainerConfigs(runtime, in.Directory, in.Package)
 	default:
 		return nil, AddDependencyResponse{}, fmt.Errorf(
 			"%w: %s",
@@ -163,6 +168,41 @@ func getPythonContainerConfigs(
 			},
 			AutoRemove: true,
 		}
+}
+
+func getNodeContainerConfigs(
+	runtime *function.Runtime,
+	directory, pkg string,
+) (*container.Config, *container.HostConfig, error) {
+	// Stangely enough, we don't provide a Scaleway-specific image for Node.js dependencies
+	// like we do for Python. So we just use the public Node.js Alpine-based image from Docker Hub.
+	versionParts := strings.SplitN(runtime.Version, ".", 2)
+	if len(versionParts) == 0 {
+		return nil, nil, fmt.Errorf("parsing node version: %w", ErrRuntimeNotFound)
+	}
+	majorVersion := versionParts[0]
+	image := "node:" + majorVersion + "-alpine"
+
+	return &container.Config{
+			Image: image,
+			Cmd: []string{
+				"npm",
+				"install",
+				pkg,
+				"--prefix",
+				"/function",
+			},
+			Env: []string{
+				// Do not install dev dependencies!
+				"NODE_ENV=production",
+			},
+			WorkingDir: "/function",
+		}, &container.HostConfig{
+			Binds: []string{
+				directory + "/:/function:rw",
+			},
+			AutoRemove: true,
+		}, nil
 }
 
 func runContainer(
