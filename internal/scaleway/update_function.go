@@ -74,7 +74,7 @@ func (t *Tools) UpdateFunction(
 	req *mcp.CallToolRequest,
 	in UpdateFunctionRequest,
 ) (*mcp.CallToolResult, Function, error) {
-	progress := NewFunctionDeploymentProgress()
+	progress := NewFunctionDeploymentProgress(in.FunctionName)
 
 	fun, err := getFunctionByName(ctx, t.functionsAPI, in.FunctionName)
 	if err != nil {

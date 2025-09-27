@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/cyclimse/mcp-scaleway-functions/pkg/slogctx"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	function "github.com/scaleway/scaleway-sdk-go/api/function/v1beta1"
 )
@@ -34,12 +35,14 @@ var emojiForStep = map[FunctionDeploymentStep]string{
 }
 
 type FunctionDeploymentProgress struct {
-	CurrentStep FunctionDeploymentStep
+	functionName string
+	currentStep  FunctionDeploymentStep
 }
 
-func NewFunctionDeploymentProgress() *FunctionDeploymentProgress {
+func NewFunctionDeploymentProgress(functionName string) *FunctionDeploymentProgress {
 	return &FunctionDeploymentProgress{
-		CurrentStep: StepCreatingCodeArchive,
+		functionName: functionName,
+		currentStep:  StepCreatingCodeArchive,
 	}
 }
 
@@ -73,7 +76,7 @@ func (p *FunctionDeploymentProgress) GetFunctionBuildCB(
 ) WaitForFunctionCallback {
 	var lastBuildMessageNotified string
 	// Reset to the step where the build starts.
-	p.CurrentStep = StepBuildStarted
+	p.currentStep = StepBuildStarted
 
 	return func(fun *function.Function) {
 		buildMessage := valueOrDefault(fun.BuildMessage, "")
@@ -83,7 +86,7 @@ func (p *FunctionDeploymentProgress) GetFunctionBuildCB(
 		if buildMessage != "" && hasChanged {
 			lastBuildMessageNotified = buildMessage
 
-			p.notifyInner(ctx, req, displayBuildMessageWithEmoji(p.CurrentStep, buildMessage))
+			p.notifyInner(ctx, req, displayBuildMessageWithEmoji(p.currentStep, buildMessage))
 			p.incrementStep()
 		}
 	}
@@ -112,8 +115,8 @@ func displayBuildMessageWithEmoji(step FunctionDeploymentStep, message string) s
 }
 
 func (p *FunctionDeploymentProgress) incrementStep() {
-	if p.CurrentStep < TotalFunctionSteps {
-		p.CurrentStep++
+	if p.currentStep < TotalFunctionSteps {
+		p.currentStep++
 	}
 }
 
@@ -122,26 +125,24 @@ func (p *FunctionDeploymentProgress) notifyInner(
 	req *mcp.CallToolRequest,
 	message string,
 ) {
+	logger := slogctx.FromContext(ctx).With(
+		"function_name", p.functionName,
+		"step", p.currentStep,
+		"message", message,
+	)
 	progressToken := req.Params.GetProgressToken()
 
 	params := &mcp.ProgressNotificationParams{
 		Message:       message,
 		ProgressToken: progressToken,
-		Progress:      float64(p.CurrentStep),
+		Progress:      float64(p.currentStep),
 		Total:         float64(TotalFunctionSteps),
 	}
 
-	slog.InfoContext(
-		ctx,
-		"function deployment progress",
-		"step",
-		p.CurrentStep,
-		"total_steps",
-		TotalFunctionSteps,
-	)
+	logger.InfoContext(ctx, "Function deployment progressed")
 
 	err := req.Session.NotifyProgress(ctx, params)
 	if err != nil {
-		slog.ErrorContext(ctx, "notifying progress", "error", err)
+		slog.ErrorContext(ctx, "Notifying progress", "error", err)
 	}
 }

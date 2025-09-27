@@ -14,35 +14,47 @@ import (
 
 	"github.com/alecthomas/kong"
 	"github.com/cyclimse/mcp-scaleway-functions/internal/constants"
+	"github.com/cyclimse/mcp-scaleway-functions/internal/middlewares"
 	"github.com/cyclimse/mcp-scaleway-functions/internal/scaleway"
+	"github.com/cyclimse/mcp-scaleway-functions/pkg/scwslog"
 	"github.com/lmittmann/tint"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	account "github.com/scaleway/scaleway-sdk-go/api/account/v3"
+	scwlogger "github.com/scaleway/scaleway-sdk-go/logger"
 	"github.com/scaleway/scaleway-sdk-go/scw"
 )
 
 type cliContext struct {
+	Debug  bool
 	Logger *slog.Logger
 }
 
 //nolint:gochecknoglobals
 var cli struct {
-	LogLevel slog.Level `help:"Log level (debug, info, warn, error)"`
+	Debug bool `help:"Enable debug mode." short:"d"`
 
-	Serve serveCmd `cmd:"" default:"withargs" help:"Start the MCP server"`
+	LogLevel slog.Level `help:"Log level (debug, info, warn, error)."`
+
+	Serve serveCmd `cmd:"" default:"withargs" help:"Start the MCP server."`
 }
 
 type serveCmd struct {
-	Profile string `help:"Scaleway profile to use (overrides the active profile)"`
+	Profile string `help:"Scaleway profile to use (overrides the active profile)." short:"p"`
 
-	Transport string `default:"sse" enum:"sse,stdio" help:"Transport to use (sse or stdio)"`
+	Transport string `default:"sse" enum:"sse,stdio" help:"Transport to use (sse or stdio)."`
 
-	HTTPHost string `default:"localhost" help:"HTTP host to listen on"`
-	HTTPPort int    `default:"8080"      help:"HTTP port to listen on"`
+	HTTPHost string `default:"localhost" help:"HTTP host to listen on."`
+	HTTPPort int    `default:"8080"      help:"HTTP port to listen on."`
 }
 
 func (cmd *serveCmd) Run(cliCtx *cliContext) error {
 	logger := cliCtx.Logger
+
+	scwlogger.SetLogger(scwslog.NewLogger(logger))
+
+	if cliCtx.Debug {
+		scwlogger.EnableDebugMode()
+	}
 
 	p, err := loadScalewayProfile(cmd.Profile)
 	if err != nil {
@@ -67,12 +79,12 @@ func (cmd *serveCmd) Run(cliCtx *cliContext) error {
 		Title:   "MCP Scaleway Serverless Functions",
 		Version: constants.Version,
 	}, nil)
+	server.AddReceivingMiddleware(
+		middlewares.NewInjectLogger(logger),
+		middlewares.NewLogging(),
+	)
 
 	tools.Register(server)
-
-	logger = logger.With(
-		slog.String("transport", cmd.Transport),
-	)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
@@ -145,18 +157,24 @@ func main() {
 
 	ctx := kong.Parse(&cli)
 
-	logger := slog.New(tint.NewHandler(w, nil)).With(
-		slog.String("component", "main"),
+	logLevel := cli.LogLevel
+	if cli.Debug {
+		logLevel = slog.LevelDebug
+	}
+
+	hdl := tint.NewHandler(w, &tint.Options{
+		Level:      logLevel,
+		TimeFormat: time.Kitchen,
+	})
+	logger := slog.New(hdl).With(
 		slog.String("version", constants.Version),
 	)
-	slog.SetDefault(slog.New(
-		tint.NewHandler(w, &tint.Options{
-			Level:      cli.LogLevel,
-			TimeFormat: time.Kitchen,
-		}),
-	))
+	slog.SetDefault(logger)
 
-	err := ctx.Run(&cliContext{Logger: logger})
+	err := ctx.Run(&cliContext{
+		Debug:  cli.Debug,
+		Logger: logger,
+	})
 	ctx.FatalIfErrorf(err)
 }
 
