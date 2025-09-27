@@ -9,14 +9,13 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/cyclimse/mcp-scaleway-functions/internal/constants"
+	"github.com/cyclimse/mcp-scaleway-functions/internal/std"
 	"github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/client"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	function "github.com/scaleway/scaleway-sdk-go/api/function/v1beta1"
 	"github.com/scaleway/scaleway-sdk-go/scw"
-
-	"github.com/cyclimse/mcp-scaleway-functions/internal/constants"
-	"github.com/cyclimse/mcp-scaleway-functions/internal/std"
 )
 
 var (
@@ -98,7 +97,11 @@ func (t *Tools) AddDependency(
 
 		containerConfig, hostConfig = getPythonContainerConfigs(runtime, in.Directory, in.Package)
 	case "node":
-		containerConfig, hostConfig, err = getNodeContainerConfigs(runtime, in.Directory, in.Package)
+		containerConfig, hostConfig = getNodeContainerConfigs(
+			runtime,
+			in.Directory,
+			in.Package,
+		)
 	default:
 		return nil, AddDependencyResponse{}, fmt.Errorf(
 			"%w: %s",
@@ -173,13 +176,14 @@ func getPythonContainerConfigs(
 func getNodeContainerConfigs(
 	runtime *function.Runtime,
 	directory, pkg string,
-) (*container.Config, *container.HostConfig, error) {
+) (*container.Config, *container.HostConfig) {
 	// Stangely enough, we don't provide a Scaleway-specific image for Node.js dependencies
 	// like we do for Python. So we just use the public Node.js Alpine-based image from Docker Hub.
 	versionParts := strings.SplitN(runtime.Version, ".", 2)
 	if len(versionParts) == 0 {
-		return nil, nil, fmt.Errorf("parsing node version: %w", ErrRuntimeNotFound)
+		versionParts = []string{runtime.Version}
 	}
+
 	majorVersion := versionParts[0]
 	image := "node:" + majorVersion + "-alpine"
 
@@ -202,7 +206,7 @@ func getNodeContainerConfigs(
 				directory + "/:/function:rw",
 			},
 			AutoRemove: true,
-		}, nil
+		}
 }
 
 func runContainer(

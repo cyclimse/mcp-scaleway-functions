@@ -63,7 +63,7 @@ func TestTools_AddDependency(t *testing.T) {
 		myPythonFunctionDir,
 		myRustFunctionDir,
 	} {
-		err := os.Mkdir(dir, 0o755)
+		err := os.Mkdir(dir, 0o750)
 		require.NoError(t, err)
 	}
 
