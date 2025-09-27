@@ -19,3 +19,9 @@ packages:
   github.com/cyclimse/mcp-scaleway-functions/internal/scaleway:
     config:
       all: true
+  github.com/moby/moby/client:
+    config:
+      dir: "internal/scaleway/testing/mockdocker"
+      pkgname: "mockdocker"
+    interfaces:
+      APIClient:

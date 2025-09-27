@@ -2,14 +2,15 @@ package scaleway
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"slices"
 	"strings"
-	"sync"
 
 	"github.com/cyclimse/mcp-scaleway-functions/internal/constants"
+	"github.com/cyclimse/mcp-scaleway-functions/internal/std"
 	"github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/client"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -18,16 +19,20 @@ import (
 )
 
 var (
-	ErrRuntimeNotFound               = fmt.Errorf("runtime not found")
-	ErrRuntimeDependencyNotSupported = fmt.Errorf("adding dependencies is not supported for this runtime")
+	ErrRuntimeNotFound               = errors.New("runtime not found")
+	ErrRuntimeDependencyNotSupported = errors.New(
+		"adding dependencies is not supported for this runtime",
+	)
+	ErrDirectoryNotExist       = errors.New("directory does not exist")
+	ErrDependencyInstallFailed = errors.New(
+		"failed to install dependency",
+	)
 
+	//nolint:gochecknoglobals
 	supportedLanguagesForDependencies = []string{
 		"python",
 		"node",
 	}
-
-	loadDockerClientOnce sync.Once
-	dockerClient         *client.Client
 )
 
 //nolint:gochecknoglobals
@@ -54,42 +59,35 @@ func (t *Tools) AddDependency(
 	in AddDependencyRequest,
 ) (*mcp.CallToolResult, AddDependencyResponse, error) {
 	// Check that the runtime exists and supports dependencies
-	runtimes, err := t.functionsAPI.ListFunctionRuntimes(&function.ListFunctionRuntimesRequest{}, scw.WithContext(ctx))
+	runtime, language, err := getAndValidateRuntime(ctx, t.functionsAPI, in)
 	if err != nil {
-		return nil, AddDependencyResponse{}, fmt.Errorf("listing function runtimes: %w", err)
-	}
-
-	i := slices.IndexFunc(runtimes.Runtimes, func(r *function.Runtime) bool {
-		return r.Name == in.Runtime
-	})
-	if i == -1 {
-		return nil, AddDependencyResponse{}, fmt.Errorf("%w: %s", ErrRuntimeNotFound, in.Runtime)
-	}
-
-	runtime := runtimes.Runtimes[i]
-	language := strings.ToLower(runtime.Language)
-
-	if !slices.Contains(supportedLanguagesForDependencies, language) {
-		return nil, AddDependencyResponse{}, fmt.Errorf("%w: %s", ErrRuntimeDependencyNotSupported, in.Runtime)
+		return nil, AddDependencyResponse{}, fmt.Errorf("getting runtime: %w", err)
 	}
 
 	// Check that the directory exists
 	if _, err := os.Stat(in.Directory); os.IsNotExist(err) {
-		return nil, AddDependencyResponse{}, fmt.Errorf("directory does not exist: %s", in.Directory)
+		return nil, AddDependencyResponse{}, fmt.Errorf(
+			"%w: %s",
+			ErrDirectoryNotExist,
+			in.Directory,
+		)
 	}
 
-	dockerClient, err := loadDockerClient()
+	// Initialize Docker client if needed
+	err = t.loadDockerClient()
 	if err != nil {
 		return nil, AddDependencyResponse{}, fmt.Errorf("loading docker client: %w", err)
 	}
 
-	var containerConfig *container.Config
-	var hostConfig *container.HostConfig
+	var (
+		containerConfig *container.Config
+		hostConfig      *container.HostConfig
+	)
 
 	switch language {
 	case "python":
 		// Create package folder if it doesn't exist to avoid permissions issues
-		if err := os.MkdirAll(in.Directory+"/"+constants.PythonPackageFolder, 0o755); err != nil {
+		if err := os.MkdirAll(in.Directory+"/"+constants.PythonPackageFolder, 0o750); err != nil {
 			return nil, AddDependencyResponse{}, fmt.Errorf("creating package folder: %w", err)
 		}
 
@@ -97,34 +95,64 @@ func (t *Tools) AddDependency(
 	// case "node":
 	// 	containerConfig, hostConfig, err = getNodeContainerConfigs(in.Directory, in.Package)
 	default:
-		return nil, AddDependencyResponse{}, fmt.Errorf("%w: %s", ErrRuntimeDependencyNotSupported, in.Runtime)
+		return nil, AddDependencyResponse{}, fmt.Errorf(
+			"%w: %s",
+			ErrRuntimeDependencyNotSupported,
+			in.Runtime,
+		)
 	}
 
-	if err := runContainer(ctx, dockerClient, containerConfig, hostConfig); err != nil {
+	if err := runContainer(ctx, t.dockerAPI, containerConfig, hostConfig); err != nil {
 		return nil, AddDependencyResponse{}, fmt.Errorf("running container: %w", err)
 	}
 
 	return &mcp.CallToolResult{}, AddDependencyResponse{}, nil
 }
 
-func loadDockerClient() (*client.Client, error) {
-	var err error
-
-	loadDockerClientOnce.Do(func() {
-		dockerClient, err = client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	})
+func getAndValidateRuntime(
+	ctx context.Context,
+	functionsAPI FunctionAPI,
+	in AddDependencyRequest,
+) (*function.Runtime, string, error) {
+	runtimes, err := functionsAPI.ListFunctionRuntimes(
+		&function.ListFunctionRuntimesRequest{},
+		scw.WithContext(ctx),
+	)
 	if err != nil {
-		return nil, err
+		return nil, "", fmt.Errorf("listing function runtimes: %w", err)
 	}
 
-	return dockerClient, nil
+	i := slices.IndexFunc(runtimes.Runtimes, func(r *function.Runtime) bool {
+		return r.Name == in.Runtime
+	})
+	if i == -1 {
+		return nil, "", fmt.Errorf("%w: %s", ErrRuntimeNotFound, in.Runtime)
+	}
+
+	runtime := runtimes.Runtimes[i]
+	language := strings.ToLower(runtime.Language)
+
+	if !slices.Contains(supportedLanguagesForDependencies, language) {
+		return nil, "", fmt.Errorf("%w: %s", ErrRuntimeDependencyNotSupported, in.Runtime)
+	}
+
+	return runtime, language, nil
 }
 
 // Reference: https://www.scaleway.com/en/docs/serverless-functions/how-to/package-function-dependencies-in-zip/?tab=python-2
-func getPythonContainerConfigs(runtime *function.Runtime, directory, pkg string) (*container.Config, *container.HostConfig) {
+func getPythonContainerConfigs(
+	runtime *function.Runtime,
+	directory, pkg string,
+) (*container.Config, *container.HostConfig) {
 	return &container.Config{
 			Image: constants.PublicRuntimesRegistry + "/python-dep:" + runtime.Version,
-			Cmd:   []string{"pip", "install", pkg, "-t", "/function/" + constants.PythonPackageFolder},
+			Cmd: []string{
+				"pip",
+				"install",
+				pkg,
+				"--target",
+				"/function/" + constants.PythonPackageFolder,
+			},
 			Env: []string{
 				"PYTHONUNBUFFERED=1",
 			},
@@ -139,21 +167,26 @@ func getPythonContainerConfigs(runtime *function.Runtime, directory, pkg string)
 
 func runContainer(
 	ctx context.Context,
-	dockerClient *client.Client,
+	dockerClient client.APIClient,
 	containerConfig *container.Config,
 	hostConfig *container.HostConfig,
 ) error {
-	// TODO: this is really slow: we should send progress updates to the user
+	// LATER: this is really slow: we should send progress updates to the user
 	// when pulling the image and running the container
 	reader, err := dockerClient.ImagePull(ctx, containerConfig.Image, client.ImagePullOptions{})
 	if err != nil {
 		return fmt.Errorf("pulling image %s: %w", containerConfig.Image, err)
 	}
-	defer reader.Close()
+
+	defer func() {
+		_ = reader.Close()
+	}()
 
 	// We don't need to read the output, just wait for the image to be pulled.
-	// TODO: add a timeout?
-	_, _ = io.Copy(io.Discard, reader)
+	err = std.Copy(ctx, io.Discard, reader)
+	if err != nil {
+		return fmt.Errorf("reading image pull response: %w", err)
+	}
 
 	resp, err := dockerClient.ContainerCreate(ctx, containerConfig, hostConfig, nil, nil, "")
 	if err != nil {
@@ -172,7 +205,7 @@ func runContainer(
 		}
 	case status := <-statusCh:
 		if status.StatusCode != 0 {
-			return fmt.Errorf("container exited with status code %d", status.StatusCode)
+			return fmt.Errorf("%w: exit code %d", ErrDependencyInstallFailed, status.StatusCode)
 		}
 	}
 

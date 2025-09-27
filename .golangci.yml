@@ -52,6 +52,7 @@ linters:
       - linters:
           - funlen
           - gochecknoglobals
+          - revive
         path: (.+)_test\.go
 
 formatters:

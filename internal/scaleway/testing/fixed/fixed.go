@@ -12,4 +12,6 @@ const (
 	SomeProjectName = "my-project"
 
 	SomeRegion = "fr-par"
+
+	SomeDockerContainerID = "d9b100f2f636ffddd6ae1e4ae015f1a4"
 )
