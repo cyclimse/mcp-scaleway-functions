@@ -177,7 +177,7 @@ func getNodeContainerConfigs(
 	runtime *function.Runtime,
 	directory, pkg string,
 ) (*container.Config, *container.HostConfig) {
-	// Stangely enough, we don't provide a Scaleway-specific image for Node.js dependencies
+	// Strangely enough, we don't provide a Scaleway-specific image for Node.js dependencies
 	// like we do for Python. So we just use the public Node.js Alpine-based image from Docker Hub.
 	versionParts := strings.SplitN(runtime.Version, ".", 2)
 	if len(versionParts) == 0 {
