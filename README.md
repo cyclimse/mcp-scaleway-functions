@@ -60,10 +60,10 @@ Add a new server configuration in your `~/.config/crush/config.json` file:
 
 You can even use Crush with [Scaleway Generative APIs](https://www.scaleway.com/en/generative-apis/) by adding a new provider in the same `~/.config/crush/config.json` file:
 
-```json
+```jsonc
 {
   "mcp": {
-	...
+	// ... see above ...
   },
   "providers": {
     "scaleway": {
