@@ -31,20 +31,20 @@ type cliContext struct {
 
 //nolint:gochecknoglobals
 var cli struct {
-	Debug bool `help:"Enable debug mode" short:"d"`
+	Debug bool `help:"Enable debug mode." short:"d"`
 
-	LogLevel slog.Level `help:"Log level (debug, info, warn, error)"`
+	LogLevel slog.Level `help:"Log level (debug, info, warn, error)."`
 
-	Serve serveCmd `cmd:"" default:"withargs" help:"Start the MCP server"`
+	Serve serveCmd `cmd:"" default:"withargs" help:"Start the MCP server."`
 }
 
 type serveCmd struct {
-	Profile string `help:"Scaleway profile to use (overrides the active profile)"`
+	Profile string `help:"Scaleway profile to use (overrides the active profile)." short:"p"`
 
-	Transport string `default:"sse" enum:"sse,stdio" help:"Transport to use (sse or stdio)"`
+	Transport string `default:"sse" enum:"sse,stdio" help:"Transport to use (sse or stdio)."`
 
-	HTTPHost string `default:"localhost" help:"HTTP host to listen on"`
-	HTTPPort int    `default:"8080"      help:"HTTP port to listen on"`
+	HTTPHost string `default:"localhost" help:"HTTP host to listen on."`
+	HTTPPort int    `default:"8080"      help:"HTTP port to listen on."`
 }
 
 func (cmd *serveCmd) Run(cliCtx *cliContext) error {

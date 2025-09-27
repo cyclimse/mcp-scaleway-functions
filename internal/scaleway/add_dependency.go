@@ -11,10 +11,12 @@ import (
 
 	"github.com/cyclimse/mcp-scaleway-functions/internal/constants"
 	"github.com/cyclimse/mcp-scaleway-functions/internal/std"
+	"github.com/cyclimse/mcp-scaleway-functions/pkg/slogctx"
 	"github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/client"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	function "github.com/scaleway/scaleway-sdk-go/api/function/v1beta1"
+	"github.com/scaleway/scaleway-sdk-go/namegenerator"
 	"github.com/scaleway/scaleway-sdk-go/scw"
 )
 
@@ -215,6 +217,9 @@ func runContainer(
 	containerConfig *container.Config,
 	hostConfig *container.HostConfig,
 ) error {
+	logger := slogctx.FromContext(ctx)
+	logger.Info("Pulling Docker image", "image", containerConfig.Image)
+
 	// LATER: this is really slow: we should send progress updates to the user
 	// when pulling the image and running the container
 	reader, err := dockerClient.ImagePull(ctx, containerConfig.Image, client.ImagePullOptions{})
@@ -232,14 +237,30 @@ func runContainer(
 		return fmt.Errorf("reading image pull response: %w", err)
 	}
 
-	resp, err := dockerClient.ContainerCreate(ctx, containerConfig, hostConfig, nil, nil, "")
+	containerName := namegenerator.GetRandomName(constants.ProjectName, "dep")
+	logger = logger.With("container_name", containerName)
+	logger.Info("Creating and starting Docker container")
+
+	resp, err := dockerClient.ContainerCreate(
+		ctx,
+		containerConfig,
+		hostConfig,
+		nil,
+		nil,
+		containerName,
+	)
 	if err != nil {
 		return fmt.Errorf("creating container: %w", err)
 	}
 
+	logger = logger.With("container_id", resp.ID)
+	logger.Info("Starting Docker container")
+
 	if err := dockerClient.ContainerStart(ctx, resp.ID, client.ContainerStartOptions{}); err != nil {
 		return fmt.Errorf("starting container: %w", err)
 	}
+
+	logger.Info("Waiting for build container to finish")
 
 	statusCh, errCh := dockerClient.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
 	select {
