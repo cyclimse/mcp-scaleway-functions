@@ -20,10 +20,13 @@ Run the MCP server:
 
 By default, the MCP server runs with the SSE transport on `http://localhost:8080`, but you can also change it to use Standard I/O (stdio) transport via the `--transport stdio` flag.
 
-Then, configure your IDE to use the MCP server. Here's an example with VSCode and GitHub Copilot:
+Then, configure your IDE or tool of choice to connect to the MCP server. Here are some examples:
 
-```jsonc
-// In .vscode/mcp.json
+### VSCode (sse example)
+
+Add a new server configuration in your `.vscode/mcp.json` file:
+
+```json
 {
 	"servers": {
 		"mcp-scaleway-functions": {
@@ -34,11 +37,63 @@ Then, configure your IDE to use the MCP server. Here's an example with VSCode an
 }
 ```
 
+### Crush (stdio example)
+
+Crush is an open-source coding agent that supports MCP. You can find more information about in the [Crush repository](https://github.com/charmbracelet/crush).
+
+Add a new server configuration in your `~/.config/crush/config.json` file:
+
+```json
+{
+  "$schema": "https://charm.land/crush.json",
+  "mcp": {
+    "scaleway-functions": {
+      "type": "stdio",
+      "command": "mcp-scaleway-functions",
+      "args": ["--transport", "stdio"],
+      "timeout": 600,
+      "disabled": false
+    }
+  }
+}
+```
+
+You can even use Crush with [Scaleway Generative APIs](https://www.scaleway.com/en/generative-apis/) by adding a new provider in the same `~/.config/crush/config.json` file:
+
+```jsonc
+{
+  "mcp": {
+	// ... see above ...
+  },
+  "providers": {
+    "scaleway": {
+      "name": "Scaleway",
+      "base_url": "https://api.scaleway.ai/v1/",
+      "type": "openai",
+	  // To fetch from environment variables, use the `$VAR_NAME` syntax.
+	  // Note: this key requires the "GenerativeApisModelAccess" permission.
+      "api_key": "$SCW_SECRET_KEY",
+      "models": [
+        {
+          "name": "Qwen coder",
+          "id": "qwen3-coder-30b-a3b-instruct",
+          "context_window": 128000,
+          "default_max_tokens": 8000
+        }
+      ]
+    }
+  }
+}
+```
+
 That's it 🎉! Have fun vibecoding and vibedevoopsing as you please.
 
 ## Configuration
 
-You can use the standard [Scaleway environment variables](https://www.scaleway.com/en/docs/scaleway-cli/reference-content/environment-variables/) to configure the MCP server.
+By default, the MCP server reads from the standard Scaleway configuration file located at `~/.config/scw/config.yaml`.
+
+Further configuration can be done via the
+[Scaleway environment variables](https://www.scaleway.com/en/docs/scaleway-cli/reference-content/environment-variables/) to configure the MCP server.
 
 For instance, you can set a region to work in via the `SCW_DEFAULT_REGION` environment variable.
 
