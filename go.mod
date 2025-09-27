@@ -11,7 +11,7 @@ require (
 	github.com/modelcontextprotocol/go-sdk v0.8.0
 	github.com/opencontainers/image-spec v1.1.1
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.35
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 )
 
 require (
