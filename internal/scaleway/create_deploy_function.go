@@ -42,7 +42,7 @@ type CreateAndDeployFunctionRequest struct {
 	Directory string `json:"directory"`
 
 	// CreateFunctionRequest fields
-	Name                       string            `json:"name"`
+	FunctionName               string            `json:"function_name"`
 	NamespaceName              string            `json:"namespace_name"`
 	Runtime                    string            `json:"runtime"`
 	Handler                    string            `json:"handler"`
@@ -74,7 +74,7 @@ func (req CreateAndDeployFunctionRequest) ToSDK(
 
 	return &function.CreateFunctionRequest{
 		NamespaceID: namespaceID,
-		Name:        req.Name,
+		Name:        req.FunctionName,
 		Runtime:     function.FunctionRuntime(req.Runtime),
 		Handler:     &req.Handler,
 		Timeout: &scw.Duration{
@@ -95,7 +95,7 @@ func (t *Tools) CreateAndDeployFunction(
 	req *mcp.CallToolRequest,
 	in CreateAndDeployFunctionRequest,
 ) (*mcp.CallToolResult, Function, error) {
-	progress := NewFunctionDeploymentProgress()
+	progress := NewFunctionDeploymentProgress(in.FunctionName)
 
 	ns, err := getFunctionNamespaceByName(ctx, t.functionsAPI, in.NamespaceName)
 	if err != nil {
