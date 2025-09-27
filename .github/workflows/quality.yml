@@ -43,3 +43,17 @@ jobs:
 
       - name: Run tests
         run: go tool gotestsum --format testdox
+
+  build:
+    name: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+
+      - name: Build
+        run: go build -v ./...
