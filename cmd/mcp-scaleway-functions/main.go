@@ -9,21 +9,22 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path"
+	"path/filepath"
 	"strconv"
 	"time"
 
 	"github.com/alecthomas/kong"
-	"github.com/lmittmann/tint"
-	"github.com/modelcontextprotocol/go-sdk/mcp"
-	slogmulti "github.com/samber/slog-multi"
-	account "github.com/scaleway/scaleway-sdk-go/api/account/v3"
-	"github.com/scaleway/scaleway-sdk-go/scw"
-
 	"github.com/cyclimse/mcp-scaleway-functions/internal/constants"
 	"github.com/cyclimse/mcp-scaleway-functions/internal/middlewares"
 	"github.com/cyclimse/mcp-scaleway-functions/internal/scaleway"
 	"github.com/cyclimse/mcp-scaleway-functions/pkg/scwslog"
+	"github.com/lmittmann/tint"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
+	slogmulti "github.com/samber/slog-multi"
+	account "github.com/scaleway/scaleway-sdk-go/api/account/v3"
 	scwlogger "github.com/scaleway/scaleway-sdk-go/logger"
+	"github.com/scaleway/scaleway-sdk-go/scw"
 )
 
 const (
@@ -171,6 +172,7 @@ func main() {
 	if err != nil {
 		ctx.FatalIfErrorf(fmt.Errorf("creating logger: %w", err))
 	}
+
 	logger = logger.With("version", constants.Version)
 	slog.SetDefault(logger)
 
@@ -193,11 +195,15 @@ func createLogger(logLevel slog.Level, transport string) (*slog.Logger, error) {
 	}
 
 	logDir := xdgStateDir + "/" + constants.ProjectName
-	if err := os.MkdirAll(logDir, 0o755); err != nil {
+	if err := os.MkdirAll(logDir, 0o750); err != nil {
 		return nil, fmt.Errorf("creating log directory %q: %w", logDir, err)
 	}
 
-	logFile, err := os.OpenFile(logDir+"/server.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	logFile, err := os.OpenFile(
+		filepath.Join(path.Clean(logDir), "server.log"),
+		os.O_APPEND|os.O_CREATE|os.O_WRONLY,
+		0o600,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("opening log file: %w", err)
 	}

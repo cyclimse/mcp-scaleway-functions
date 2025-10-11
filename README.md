@@ -1,6 +1,6 @@
 # MCP Scaleway Functions
 
-This is an unofficial implementation of a Model Context Protocol (MCP) server to manage and deploy [Scaleway Serverless Functions](https://www.scaleway.com/en/serverless-functions/) using the [Model Context Protocol (MCP)](https://modelcontextprotocol.org/) standard.
+Model Context Protocol (MCP) server to manage and deploy [Scaleway Serverless Functions](https://www.scaleway.com/en/serverless-functions/) using the [Model Context Protocol](https://modelcontextprotocol.org/) standard.
 
 > [!CAUTION]
 > This project is unofficial and not affiliated with or endorsed by Scaleway.
@@ -41,7 +41,7 @@ Add a new server configuration in your `.vscode/mcp.json` file:
 
 Crush is an open-source coding agent that supports MCP. You can find more information about in the [Crush repository](https://github.com/charmbracelet/crush).
 
-Add a new server configuration in your `~/.config/crush/config.json` file:
+Add a new server configuration in your `~/.config/crush/crush.json` file:
 
 ```json
 {
@@ -58,7 +58,7 @@ Add a new server configuration in your `~/.config/crush/config.json` file:
 }
 ```
 
-You can even use Crush with [Scaleway Generative APIs](https://www.scaleway.com/en/generative-apis/) by adding a new provider in the same `~/.config/crush/config.json` file:
+You can even use Crush with [Scaleway Generative APIs](https://www.scaleway.com/en/generative-apis/) by adding a new provider in the same `~/.config/crush/crush.json` file:
 
 ```jsonc
 {
@@ -115,3 +115,11 @@ SCW_DEFAULT_REGION=nl-ams ./mcp-scaleway-functions
 | `delete_function`                      | Delete a function.                                                                                                                |
 | `download_function`                    | Download the code of a function. This is useful to work on an existing function.                                                  |
 | `add_dependency`                       | Add a dependency to a local function. Useful for dependencies that rely on native code and therefore need Docker to be installed. |
+
+## Debugging
+
+You can enable debug logging by using the `--debug` flag when starting the MCP server. This will log all requests and responses to/from the Scaleway API.
+
+To configure the log level, use the `--log-level` flag (default is `info`). Available log levels are: `debug`, `info`, `warn`, `error`.
+
+Logs are stored in the `$XDG_STATE_HOME/mcp-scaleway-functions` directory (usually `~/.local/state/mcp-scaleway-functions`).
