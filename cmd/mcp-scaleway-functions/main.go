@@ -13,15 +13,22 @@ import (
 	"time"
 
 	"github.com/alecthomas/kong"
+	"github.com/lmittmann/tint"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
+	slogmulti "github.com/samber/slog-multi"
+	account "github.com/scaleway/scaleway-sdk-go/api/account/v3"
+	"github.com/scaleway/scaleway-sdk-go/scw"
+
 	"github.com/cyclimse/mcp-scaleway-functions/internal/constants"
 	"github.com/cyclimse/mcp-scaleway-functions/internal/middlewares"
 	"github.com/cyclimse/mcp-scaleway-functions/internal/scaleway"
 	"github.com/cyclimse/mcp-scaleway-functions/pkg/scwslog"
-	"github.com/lmittmann/tint"
-	"github.com/modelcontextprotocol/go-sdk/mcp"
-	account "github.com/scaleway/scaleway-sdk-go/api/account/v3"
 	scwlogger "github.com/scaleway/scaleway-sdk-go/logger"
-	"github.com/scaleway/scaleway-sdk-go/scw"
+)
+
+const (
+	sseTransport   = "sse"
+	stdioTransport = "stdio"
 )
 
 type cliContext struct {
@@ -90,9 +97,9 @@ func (cmd *serveCmd) Run(cliCtx *cliContext) error {
 	defer cancel()
 
 	switch cmd.Transport {
-	case "sse":
+	case sseTransport:
 		return cmd.startSSE(ctx, logger, server)
-	case "stdio":
+	case stdioTransport:
 		return cmd.startStdio(ctx, logger, server)
 	default:
 		//nolint:err113 // can't be caught anyway
@@ -153,8 +160,6 @@ func (*serveCmd) startStdio(
 }
 
 func main() {
-	w := os.Stderr
-
 	ctx := kong.Parse(&cli)
 
 	logLevel := cli.LogLevel
@@ -162,20 +167,57 @@ func main() {
 		logLevel = slog.LevelDebug
 	}
 
-	hdl := tint.NewHandler(w, &tint.Options{
-		Level:      logLevel,
-		TimeFormat: time.Kitchen,
-	})
-	logger := slog.New(hdl).With(
-		slog.String("version", constants.Version),
-	)
+	logger, err := createLogger(logLevel, cli.Serve.Transport)
+	if err != nil {
+		ctx.FatalIfErrorf(fmt.Errorf("creating logger: %w", err))
+	}
+	logger = logger.With("version", constants.Version)
 	slog.SetDefault(logger)
 
-	err := ctx.Run(&cliContext{
+	err = ctx.Run(&cliContext{
 		Debug:  cli.Debug,
 		Logger: logger,
 	})
 	ctx.FatalIfErrorf(err)
+}
+
+func createLogger(logLevel slog.Level, transport string) (*slog.Logger, error) {
+	xdgStateDir := os.Getenv("XDG_STATE_HOME")
+	if xdgStateDir == "" {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return nil, fmt.Errorf("getting user home directory: %w", err)
+		}
+
+		xdgStateDir = homeDir + "/.local/state"
+	}
+
+	logDir := xdgStateDir + "/" + constants.ProjectName
+	if err := os.MkdirAll(logDir, 0o755); err != nil {
+		return nil, fmt.Errorf("creating log directory %q: %w", logDir, err)
+	}
+
+	logFile, err := os.OpenFile(logDir+"/server.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	if err != nil {
+		return nil, fmt.Errorf("opening log file: %w", err)
+	}
+
+	var handlers []slog.Handler
+
+	// When running in sse, we also log to stderr, so that the user can see
+	// errors and warnings directly in their terminal.
+	if transport == sseTransport {
+		handlers = append(handlers, tint.NewHandler(os.Stderr, &tint.Options{
+			Level:      logLevel,
+			TimeFormat: time.Kitchen,
+		}))
+	}
+
+	handlers = append(handlers, slog.NewJSONHandler(logFile, &slog.HandlerOptions{
+		Level: logLevel,
+	}))
+
+	return slog.New(slogmulti.Fanout(handlers...)), nil
 }
 
 func loadScalewayProfile(profileName string) (*scw.Profile, error) {
