@@ -17,6 +17,8 @@ linters:
     - noinlineerr
     - ireturn
     - testpackage
+    # It's a binary project
+    - godoclint
 
   settings:
     lll:
@@ -46,6 +48,9 @@ linters:
         - name: cognitive-complexity
           arguments:
             - 15 # Yes, I'm aware this is insane, but whatever, this is a pet project
+        - name: max-public-structs
+          arguments:
+            - 10 # Up from 5
 
   exclusions:
     rules:

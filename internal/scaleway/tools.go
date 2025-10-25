@@ -106,13 +106,13 @@ func (t *Tools) Register(s *mcp.Server) {
 	mcp.AddTool(s, listFunctionsTool, t.ListFunctions)
 	mcp.AddTool(s, listFunctionRuntimesTool, t.ListFunctionRuntimes)
 
-	mcp.AddTool(s, downloadFunctionTool, t.DownloadFunction)
-
 	mcp.AddTool(s, createAndDeployFunctionTool, t.CreateAndDeployFunction)
 	mcp.AddTool(s, updateFunctionTool, t.UpdateFunction)
 
 	mcp.AddTool(s, deleteFunctionTool, t.DeleteFunction)
+	mcp.AddTool(s, downloadFunctionTool, t.DownloadFunction)
 
+	// Requires Cockpit access
 	mcp.AddTool(s, fetchFunctionLogsTool, t.FetchFunctionLogs)
 
 	// Dependency tools

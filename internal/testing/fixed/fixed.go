@@ -18,6 +18,7 @@ const (
 	SomeDockerContainerID = "d9b100f2f636ffddd6ae1e4ae015f1a4"
 )
 
+//nolint:gochecknoglobals
 var (
 	SomeTimestampA = time.Date(2025, 1, 1, 12, 0, 0, 0, time.UTC)
 	SomeTimestampB = time.Date(2025, 1, 2, 12, 0, 0, 0, time.UTC)

@@ -6,16 +6,15 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/cyclimse/mcp-scaleway-functions/internal/constants"
+	"github.com/cyclimse/mcp-scaleway-functions/internal/testing/fixed"
+	"github.com/cyclimse/mcp-scaleway-functions/internal/testing/mockdocker"
+	"github.com/cyclimse/mcp-scaleway-functions/internal/testing/mockscaleway"
 	"github.com/moby/moby/api/types/container"
 	function "github.com/scaleway/scaleway-sdk-go/api/function/v1beta1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-
-	"github.com/cyclimse/mcp-scaleway-functions/internal/constants"
-	"github.com/cyclimse/mcp-scaleway-functions/internal/testing/fixed"
-	"github.com/cyclimse/mcp-scaleway-functions/internal/testing/mockdocker"
-	"github.com/cyclimse/mcp-scaleway-functions/internal/testing/mockscaleway"
 )
 
 type mockDockerImageReader struct{}

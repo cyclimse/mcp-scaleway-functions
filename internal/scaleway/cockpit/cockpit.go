@@ -8,10 +8,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cyclimse/mcp-scaleway-functions/internal/constants"
 	cockpit "github.com/scaleway/scaleway-sdk-go/api/cockpit/v1"
 	"github.com/scaleway/scaleway-sdk-go/scw"
-
-	"github.com/cyclimse/mcp-scaleway-functions/internal/constants"
 )
 
 const (
@@ -22,7 +21,12 @@ const (
 	queryTemplateServerless = `{resource_name="%s", resource_type="%s"} |~ "^{.*}$" | json | line_format "{{.message}}"`
 )
 
-var ErrNoScalewayLogsDataSource = errors.New("no Scaleway logs data source found; please wait a few minutes and try again")
+var (
+	ErrNoScalewayLogsDataSource = errors.New(
+		"no Scaleway logs data source found; please wait a few minutes and try again",
+	)
+	ErrTokenHasNoSecretKey = errors.New("token has no secret key")
+)
 
 type Log struct {
 	Timestamp time.Time `json:"timestamp"`
@@ -30,10 +34,20 @@ type Log struct {
 }
 
 type Client interface {
-	ListFunctionLogs(ctx context.Context, resourceName string, start time.Time, end time.Time) ([]Log, error)
+	ListFunctionLogs(
+		ctx context.Context,
+		resourceName string,
+		start time.Time,
+		end time.Time,
+	) ([]Log, error)
 	// note(cyclimse): makes me think we should have a buildID in Scaleway Functions build logs
 	//                 to link logs to a specific build.
-	ListFunctionBuildLogs(ctx context.Context, resourceName string, start time.Time, end time.Time) ([]Log, error)
+	ListFunctionBuildLogs(
+		ctx context.Context,
+		resourceName string,
+		start time.Time,
+		end time.Time,
+	) ([]Log, error)
 }
 
 type client struct {
@@ -47,7 +61,43 @@ type client struct {
 func NewClient(scwClient *scw.Client, projectID string) Client {
 	return &client{
 		cockpitAPI: cockpit.NewRegionalAPI(scwClient),
+		projectID:  projectID,
 	}
+}
+
+// ListFunctionLogs implements Client.
+func (c *client) ListFunctionLogs(
+	ctx context.Context,
+	resourceName string,
+	start time.Time,
+	end time.Time,
+) ([]Log, error) {
+	lokiClient, err := c.getLokiClient(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting Loki client: %w", err)
+	}
+
+	logs, err := lokiClient.Query(
+		ctx,
+		fmt.Sprintf(queryTemplateServerless, resourceName, "serverless_function"),
+		start,
+		end,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("querying logs: %w", err)
+	}
+
+	return logs, nil
+}
+
+// ListFunctionBuildLogs implements Client.
+func (*client) ListFunctionBuildLogs(
+	_ context.Context,
+	_ string,
+	_ time.Time,
+	_ time.Time,
+) ([]Log, error) {
+	panic("unimplemented")
 }
 
 //nolint:nonamedreturns // actually like it this way.
@@ -60,13 +110,19 @@ func (c *client) getLokiClient(ctx context.Context) (lokiClient LokiClient, err 
 
 		dataSource, err = c.getScalewayLogsDataSourceURL(ctx)
 		if err != nil {
-			err = fmt.Errorf("getting Scaleway logs data source for project %q: %w", c.projectID, err)
+			err = fmt.Errorf(
+				"getting Scaleway logs data source for project %q: %w",
+				c.projectID,
+				err,
+			)
+
 			return
 		}
 
 		token, err = c.createToken(ctx)
 		if err != nil {
 			err = fmt.Errorf("creating token: %w", err)
+
 			return
 		}
 
@@ -109,7 +165,7 @@ func (c *client) createToken(ctx context.Context) (string, error) {
 	}
 
 	if token.SecretKey == nil {
-		return "", fmt.Errorf("token secret key is nil")
+		return "", ErrTokenHasNoSecretKey
 	}
 
 	return *token.SecretKey, nil
@@ -129,30 +185,10 @@ func (c *client) getScalewayLogsDataSourceURL(ctx context.Context) (string, erro
 	}
 
 	if len(resp.DataSources) == 0 {
-		return "", fmt.Errorf("no Scaleway logs data source found")
+		return "", ErrNoScalewayLogsDataSource
 	}
 
 	dataSource := resp.DataSources[0]
 
 	return dataSource.URL, nil
-}
-
-// ListFunctionLogs implements Client.
-func (c *client) ListFunctionLogs(ctx context.Context, resourceName string, start time.Time, end time.Time) ([]Log, error) {
-	lokiClient, err := c.getLokiClient(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("getting Loki client: %w", err)
-	}
-
-	logs, err := lokiClient.Query(ctx, fmt.Sprintf(queryTemplateServerless, resourceName, "serverless_function"), start, end)
-	if err != nil {
-		return nil, fmt.Errorf("querying logs: %w", err)
-	}
-
-	return logs, nil
-}
-
-// ListFunctionBuildLogs implements Client.
-func (c *client) ListFunctionBuildLogs(ctx context.Context, resourceName string, start time.Time, end time.Time) ([]Log, error) {
-	panic("unimplemented")
 }

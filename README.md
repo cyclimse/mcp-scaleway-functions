@@ -14,7 +14,7 @@ Download the latest release from the [releases page](https://github.com/cyclimse
 
 Run the MCP server:
 
-```bash
+```console
 ./mcp-scaleway-functions
 ```
 
@@ -97,7 +97,7 @@ Further configuration can be done via the
 
 For instance, you can set a region to work in via the `SCW_DEFAULT_REGION` environment variable.
 
-```bash
+```console
 SCW_DEFAULT_REGION=nl-ams ./mcp-scaleway-functions
 ```
 
@@ -114,6 +114,7 @@ SCW_DEFAULT_REGION=nl-ams ./mcp-scaleway-functions
 | `update_function`                      | Update the code or the configuration of an existing function.                                                                     |
 | `delete_function`                      | Delete a function.                                                                                                                |
 | `download_function`                    | Download the code of a function. This is useful to work on an existing function.                                                  |
+| `fetch_function_logs`                  | Fetch the logs of a function.                                                                                                     |
 | `add_dependency`                       | Add a dependency to a local function. Useful for dependencies that rely on native code and therefore need Docker to be installed. |
 
 ## Debugging
@@ -123,3 +124,18 @@ You can enable debug logging by using the `--debug` flag when starting the MCP s
 To configure the log level, use the `--log-level` flag (default is `info`). Available log levels are: `debug`, `info`, `warn`, `error`.
 
 Logs are stored in the `$XDG_STATE_HOME/mcp-scaleway-functions` directory (usually `~/.local/state/mcp-scaleway-functions`).
+
+## Development
+
+Running tests:
+
+```console
+go tool gotestsum --format testdox
+```
+
+Generating mocks:
+
+```console
+go tool mockery
+```
+

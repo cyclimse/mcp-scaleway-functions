@@ -53,7 +53,7 @@ func scwLogLevelToSlogLevel(level scwlogger.LogLevel) slog.Level {
 		return slog.LevelWarn
 	case scwlogger.LogLevelError:
 		return slog.LevelError
-	default:
-		return slog.LevelInfo
 	}
+
+	return slog.LevelInfo
 }

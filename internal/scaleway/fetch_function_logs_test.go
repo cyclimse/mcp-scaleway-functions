@@ -4,15 +4,14 @@ import (
 	"strings"
 	"testing"
 
-	function "github.com/scaleway/scaleway-sdk-go/api/function/v1beta1"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
-
 	"github.com/cyclimse/mcp-scaleway-functions/internal/scaleway/cockpit"
 	"github.com/cyclimse/mcp-scaleway-functions/internal/testing/fixed"
 	"github.com/cyclimse/mcp-scaleway-functions/internal/testing/mockcockpit"
 	"github.com/cyclimse/mcp-scaleway-functions/internal/testing/mockscaleway"
+	function "github.com/scaleway/scaleway-sdk-go/api/function/v1beta1"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func TestTools_FetchFunctionLogs(t *testing.T) {
@@ -60,7 +59,7 @@ func TestTools_FetchFunctionLogs(t *testing.T) {
 				EndTime:      fixed.SomeTimestampB,
 			},
 			wantError: func(t require.TestingT, err error, _ ...any) {
-				assert.ErrorContains(t, err, "does not support fetching logs in multiple Scaleway projects")
+				assert.ErrorIs(t, err, ErrMultipleProjectsNotSupported)
 			},
 		},
 		{
@@ -146,6 +145,7 @@ func TestTools_FetchFunctionLogs(t *testing.T) {
 			_, resp, err := tools.FetchFunctionLogs(t.Context(), nil, tc.req)
 
 			tc.wantError(t, err)
+
 			if err != nil {
 				return
 			}

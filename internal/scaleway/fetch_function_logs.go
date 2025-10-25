@@ -2,13 +2,18 @@ package scaleway
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
-	"github.com/cyclimse/mcp-scaleway-functions/internal/constants"
 	"github.com/cyclimse/mcp-scaleway-functions/internal/scaleway/cockpit"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+)
+
+var ErrMultipleProjectsNotSupported = errors.New(
+	"fetching logs across multiple Scaleway projects is not supported yet",
 )
 
 //nolint:gochecknoglobals
@@ -32,16 +37,30 @@ func (t *Tools) FetchFunctionLogs(
 	_ *mcp.CallToolRequest,
 	req FetchFunctionLogsRequest,
 ) (*mcp.CallToolResult, FetchFunctionLogsResponse, error) {
-	function, ns, err := getFunctionAndNamespaceByFunctionName(ctx, t.functionsAPI, req.FunctionName)
+	function, ns, err := getFunctionAndNamespaceByFunctionName(
+		ctx,
+		t.functionsAPI,
+		req.FunctionName,
+	)
 	if err != nil {
 		return nil, FetchFunctionLogsResponse{}, fmt.Errorf("getting function by name: %w", err)
 	}
 
 	if ns.ProjectID != t.projectID {
-		errMsg := "Currently %s does not support fetching logs in multiple Scaleway projects.\n" +
-			"Make sure to use a Scaleway profile with SCW_DEFAULT_PROJECT_ID set to %q.\n" +
-			"Please open an issue on GitHub if you need this feature."
-		return nil, FetchFunctionLogsResponse{}, fmt.Errorf(errMsg, constants.ProjectName, ns.ProjectID)
+		slog.WarnContext(
+			ctx,
+			"fetching logs across multiple Scaleway projects is not supported yet",
+			"function_project_id", ns.ProjectID,
+			"active_profile_project_id", t.projectID,
+		)
+
+		return nil, FetchFunctionLogsResponse{}, fmt.Errorf(
+			"%w: function %q is in project %q, but the active Scaleway profile is in project %q",
+			ErrMultipleProjectsNotSupported,
+			req.FunctionName,
+			ns.ProjectID,
+			t.projectID,
+		)
 	}
 
 	// The resource name used in Cockpit Logs is the function's subdomain (the part before the first dot).
