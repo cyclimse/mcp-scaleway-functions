@@ -47,9 +47,12 @@ func NewLogging() mcp.Middleware {
 			logger = logger.With(slog.Duration("duration", duration))
 			logger = logger.With(slogAttrFromResult(result)...)
 
-			if err != nil {
+			switch {
+			case err != nil:
 				logger.Error("Request failed", slog.String("error", err.Error()))
-			} else {
+			case isErrorResult(result):
+				logger.Error("Request errored")
+			default:
 				logger.Info("Request succeeded")
 			}
 
@@ -73,11 +76,28 @@ func slogAttrFromRequest(method string, req mcp.Request) []any {
 	return attrs
 }
 
+func isErrorResult(result mcp.Result) bool {
+	if callResult, ok := result.(*mcp.CallToolResult); ok {
+		return callResult.IsError
+	}
+
+	return false
+}
+
 func slogAttrFromResult(result mcp.Result) []any {
 	attrs := []any{}
 
 	if callResult, ok := result.(*mcp.CallToolResult); ok {
 		attrs = append(attrs, slogJSON("tool_result", callResult.StructuredContent))
+
+		if callResult.IsError {
+			attrs = append(attrs, slog.Bool("tool_error", true))
+
+			if len(callResult.Content) > 0 {
+				firstLines := callResult.Content[0]
+				attrs = append(attrs, slogJSON("tool_error_content", firstLines))
+			}
+		}
 	}
 
 	return attrs

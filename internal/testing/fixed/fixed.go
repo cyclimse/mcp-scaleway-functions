@@ -16,6 +16,8 @@ const (
 	SomeRegion = "fr-par"
 
 	SomeDockerContainerID = "d9b100f2f636ffddd6ae1e4ae015f1a4"
+
+	SomeCodeArchiveDigest = "sha256:400ef282bdb172f85ddc65dc1c452bfcaa8dbe1732cae89d54afcad81a2e283e"
 )
 
 //nolint:gochecknoglobals

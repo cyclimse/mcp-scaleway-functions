@@ -21,14 +21,11 @@ func (e *Entry) UnmarshalJSON(data []byte) error {
 	_, err := jsonparser.ArrayEach(
 		data,
 		func(value []byte, t jsonparser.ValueType, _ int, _ error) {
-			// assert that both items in array are of type string
+			// Assert that both items in array are of type string
 			switch i {
 			case 0: // timestamp
 				if t != jsonparser.String {
-					parseError = fmt.Errorf(
-						"%w: expected string timestamp",
-						jsonparser.MalformedStringError,
-					)
+					parseError = jsonparser.MalformedStringError
 
 					return
 				}
@@ -41,7 +38,7 @@ func (e *Entry) UnmarshalJSON(data []byte) error {
 				}
 
 				e.Timestamp = time.Unix(0, ts)
-			case 1: // value
+			case 1: // log line
 				if t != jsonparser.String {
 					parseError = jsonparser.MalformedStringError
 
@@ -57,8 +54,7 @@ func (e *Entry) UnmarshalJSON(data []byte) error {
 
 				e.Line = v
 			default:
-				// Ignore extra values
-				return
+				return // no-op
 			}
 
 			i++
@@ -69,5 +65,9 @@ func (e *Entry) UnmarshalJSON(data []byte) error {
 		return parseError
 	}
 
-	return fmt.Errorf("parsing log entry array: %w", err)
+	if err != nil {
+		return fmt.Errorf("parsing log entry array: %w", err)
+	}
+
+	return nil
 }

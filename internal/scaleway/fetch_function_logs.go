@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"strings"
 	"time"
 
 	"github.com/cyclimse/mcp-scaleway-functions/internal/scaleway/cockpit"
+	"github.com/cyclimse/mcp-scaleway-functions/pkg/slogctx"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -37,6 +37,8 @@ func (t *Tools) FetchFunctionLogs(
 	_ *mcp.CallToolRequest,
 	req FetchFunctionLogsRequest,
 ) (*mcp.CallToolResult, FetchFunctionLogsResponse, error) {
+	logger := slogctx.FromContext(ctx)
+
 	function, ns, err := getFunctionAndNamespaceByFunctionName(
 		ctx,
 		t.functionsAPI,
@@ -47,7 +49,7 @@ func (t *Tools) FetchFunctionLogs(
 	}
 
 	if ns.ProjectID != t.projectID {
-		slog.WarnContext(
+		logger.WarnContext(
 			ctx,
 			"fetching logs across multiple Scaleway projects is not supported yet",
 			"function_project_id", ns.ProjectID,

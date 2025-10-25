@@ -26,7 +26,7 @@ type CreateAndDeployFunctionNamespace struct {
 func (in CreateAndDeployFunctionNamespace) ToSDK() *function.CreateNamespaceRequest {
 	return &function.CreateNamespaceRequest{
 		Name: in.Name,
-		Tags: setCreatedByTagIfAbsent(in.Tags),
+		Tags: setCreatedByTag(in.Tags),
 	}
 }
 
