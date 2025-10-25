@@ -653,6 +653,83 @@ func (_c *MockFunctionAPI_GetFunctionUploadURL_Call) RunAndReturn(run func(getFu
 	return _c
 }
 
+// GetNamespace provides a mock function for the type MockFunctionAPI
+func (_mock *MockFunctionAPI) GetNamespace(getNamespaceRequest *function.GetNamespaceRequest, requestOptions ...scw.RequestOption) (*function.Namespace, error) {
+	var tmpRet mock.Arguments
+	if len(requestOptions) > 0 {
+		tmpRet = _mock.Called(getNamespaceRequest, requestOptions)
+	} else {
+		tmpRet = _mock.Called(getNamespaceRequest)
+	}
+	ret := tmpRet
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetNamespace")
+	}
+
+	var r0 *function.Namespace
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(*function.GetNamespaceRequest, ...scw.RequestOption) (*function.Namespace, error)); ok {
+		return returnFunc(getNamespaceRequest, requestOptions...)
+	}
+	if returnFunc, ok := ret.Get(0).(func(*function.GetNamespaceRequest, ...scw.RequestOption) *function.Namespace); ok {
+		r0 = returnFunc(getNamespaceRequest, requestOptions...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*function.Namespace)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(*function.GetNamespaceRequest, ...scw.RequestOption) error); ok {
+		r1 = returnFunc(getNamespaceRequest, requestOptions...)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockFunctionAPI_GetNamespace_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetNamespace'
+type MockFunctionAPI_GetNamespace_Call struct {
+	*mock.Call
+}
+
+// GetNamespace is a helper method to define mock.On call
+//   - getNamespaceRequest *function.GetNamespaceRequest
+//   - requestOptions ...scw.RequestOption
+func (_e *MockFunctionAPI_Expecter) GetNamespace(getNamespaceRequest interface{}, requestOptions ...interface{}) *MockFunctionAPI_GetNamespace_Call {
+	return &MockFunctionAPI_GetNamespace_Call{Call: _e.mock.On("GetNamespace",
+		append([]interface{}{getNamespaceRequest}, requestOptions...)...)}
+}
+
+func (_c *MockFunctionAPI_GetNamespace_Call) Run(run func(getNamespaceRequest *function.GetNamespaceRequest, requestOptions ...scw.RequestOption)) *MockFunctionAPI_GetNamespace_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 *function.GetNamespaceRequest
+		if args[0] != nil {
+			arg0 = args[0].(*function.GetNamespaceRequest)
+		}
+		var arg1 []scw.RequestOption
+		var variadicArgs []scw.RequestOption
+		if len(args) > 1 {
+			variadicArgs = args[1].([]scw.RequestOption)
+		}
+		arg1 = variadicArgs
+		run(
+			arg0,
+			arg1...,
+		)
+	})
+	return _c
+}
+
+func (_c *MockFunctionAPI_GetNamespace_Call) Return(namespace *function.Namespace, err error) *MockFunctionAPI_GetNamespace_Call {
+	_c.Call.Return(namespace, err)
+	return _c
+}
+
+func (_c *MockFunctionAPI_GetNamespace_Call) RunAndReturn(run func(getNamespaceRequest *function.GetNamespaceRequest, requestOptions ...scw.RequestOption) (*function.Namespace, error)) *MockFunctionAPI_GetNamespace_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ListFunctionRuntimes provides a mock function for the type MockFunctionAPI
 func (_mock *MockFunctionAPI) ListFunctionRuntimes(listFunctionRuntimesRequest *function.ListFunctionRuntimesRequest, requestOptions ...scw.RequestOption) (*function.ListFunctionRuntimesResponse, error) {
 	var tmpRet mock.Arguments

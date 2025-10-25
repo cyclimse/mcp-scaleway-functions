@@ -1,6 +1,6 @@
 all: false
 
-dir: "{{.InterfaceDir}}/testing/mock{{.SrcPackageName}}"
+dir: "internal/testing/mock{{.SrcPackageName}}"
 
 filename: mock{{.SrcPackageName}}.go
 force-file-write: true
@@ -19,9 +19,12 @@ packages:
   github.com/cyclimse/mcp-scaleway-functions/internal/scaleway:
     config:
       all: true
+  github.com/cyclimse/mcp-scaleway-functions/internal/scaleway/cockpit:
+    config:
+      all: true
   github.com/moby/moby/client:
     config:
-      dir: "internal/scaleway/testing/mockdocker"
+      dir: "internal/testing/mockdocker"
       pkgname: "mockdocker"
     interfaces:
       APIClient:

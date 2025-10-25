@@ -14,8 +14,8 @@ const (
 	// It's used as an extra safety measure to avoid deleting resources not created by this tool.
 	TagCreatedByScalewayMCP = "created_by=" + ProjectName
 
-	// RequiredPermissionSet is the minimum permission set required for the Scaleway API key.
-	RequiredPermissionSet = "FunctionsFullAccess"
+	// RequiredPermissionSets is the minimum permission sets required for the Scaleway API key.
+	RequiredPermissionSets = "FunctionsFullAccess, ObservabilityFullAccess"
 
 	PublicRuntimesRegistry = "rg.fr-par.scw.cloud/scwfunctionsruntimes-public"
 	PythonPackageFolder    = "package"
