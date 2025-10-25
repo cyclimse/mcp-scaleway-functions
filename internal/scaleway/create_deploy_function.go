@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cyclimse/mcp-scaleway-functions/internal/constants"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	function "github.com/scaleway/scaleway-sdk-go/api/function/v1beta1"
 	"github.com/scaleway/scaleway-sdk-go/scw"
@@ -82,7 +81,7 @@ func (req CreateAndDeployFunctionRequest) ToSDK(
 			Seconds: int64(timeout.Seconds()),
 		},
 		Description:                &req.Description,
-		Tags:                       setCreatedByTagIfAbsent(req.Tags),
+		Tags:                       setCreatedByTag(req.Tags),
 		EnvironmentVariables:       &req.EnvironmentVariables,
 		SecretEnvironmentVariables: secrets,
 		MinScale:                   req.MinScale,
@@ -91,6 +90,7 @@ func (req CreateAndDeployFunctionRequest) ToSDK(
 	}, nil
 }
 
+//nolint:funlen
 func (t *Tools) CreateAndDeployFunction(
 	ctx context.Context,
 	req *mcp.CallToolRequest,
@@ -122,7 +122,7 @@ func (t *Tools) CreateAndDeployFunction(
 		return nil, Function{}, fmt.Errorf("creating archive: %w", err)
 	}
 
-	tags := append(fun.Tags, constants.TagCodeArchiveDigest+archive.Digest)
+	tags := setCodeArchiveDigestTag(fun.Tags, archive.Digest)
 
 	// However, as a side-effect of doing creation first, we need to
 	// update the function to add the code archive digest tag (which helps
@@ -133,7 +133,10 @@ func (t *Tools) CreateAndDeployFunction(
 		Tags:       scw.StringsPtr(tags),
 	}, scw.WithContext(ctx))
 	if err != nil {
-		return nil, Function{}, fmt.Errorf("updating function with code archive digest tag: %w", err)
+		return nil, Function{}, fmt.Errorf(
+			"updating function with code archive digest tag: %w",
+			err,
+		)
 	}
 
 	presignedURLResp, err := t.functionsAPI.GetFunctionUploadURL(

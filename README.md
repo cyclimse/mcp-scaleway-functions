@@ -14,7 +14,7 @@ Download the latest release from the [releases page](https://github.com/cyclimse
 
 Run the MCP server:
 
-```console
+```bash
 ./mcp-scaleway-functions
 ```
 
@@ -97,7 +97,7 @@ Further configuration can be done via the
 
 For instance, you can set a region to work in via the `SCW_DEFAULT_REGION` environment variable.
 
-```console
+```bash
 SCW_DEFAULT_REGION=nl-ams ./mcp-scaleway-functions
 ```
 
@@ -129,13 +129,12 @@ Logs are stored in the `$XDG_STATE_HOME/mcp-scaleway-functions` directory (usual
 
 Running tests:
 
-```console
+```bash
 go tool gotestsum --format testdox
 ```
 
 Generating mocks:
 
-```console
+```bash
 go tool mockery
 ```
-

@@ -80,12 +80,34 @@ func getFunctionAndNamespaceByFunctionName(
 	return fun, ns, nil
 }
 
-func setCreatedByTagIfAbsent(tags []string) []string {
-	if !slices.Contains(tags, constants.TagCreatedByScalewayMCP) {
-		tags = append(tags, constants.TagCreatedByScalewayMCP)
+func setTag(tags []string, tag string) []string {
+	if !slices.Contains(tags, tag) {
+		tags = append(tags, tag)
 	}
 
 	return tags
+}
+
+func setCreatedByTag(tags []string) []string {
+	return setTag(tags, constants.TagCreatedByScalewayMCP)
+}
+
+func setCodeArchiveDigestTag(tags []string, digest string) []string {
+	prefix := constants.TagCodeArchiveDigestPrefix
+
+	// Remove any existing digest tag.
+	filtered := make([]string, 0, len(tags))
+
+	for _, tag := range tags {
+		if !strings.HasPrefix(tag, prefix) {
+			filtered = append(filtered, tag)
+		}
+	}
+
+	// Add the new digest tag.
+	filtered = append(filtered, prefix+digest)
+
+	return filtered
 }
 
 func checkResourceOwnership(tags []string) error {
@@ -97,7 +119,7 @@ func checkResourceOwnership(tags []string) error {
 }
 
 func getCodeArchiveDigestFromTags(tags []string) (string, bool) {
-	prefix := constants.TagCodeArchiveDigest
+	prefix := constants.TagCodeArchiveDigestPrefix
 
 	for _, tag := range tags {
 		after, found := strings.CutPrefix(tag, prefix)

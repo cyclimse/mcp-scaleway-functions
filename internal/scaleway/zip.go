@@ -205,7 +205,7 @@ func computeFileDigest(file *os.File) (string, error) {
 		return "", fmt.Errorf("computing file digest: %w", err)
 	}
 
-	return fmt.Sprintf("%x", hash.Sum(nil)), nil
+	return fmt.Sprintf("sha256:%x", hash.Sum(nil)), nil
 }
 
 //nolint:revive,funlen

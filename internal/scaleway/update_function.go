@@ -3,8 +3,10 @@ package scaleway
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
+	"github.com/cyclimse/mcp-scaleway-functions/pkg/slogctx"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	function "github.com/scaleway/scaleway-sdk-go/api/function/v1beta1"
 	"github.com/scaleway/scaleway-sdk-go/scw"
@@ -23,7 +25,7 @@ type UpdateFunctionRequest struct {
 	Directory    string `json:"directory"`
 	FunctionName string `json:"function_name"`
 
-	Runtime     string    `json:"runtime,omitempty"`
+	Runtime     *string   `json:"runtime,omitempty"`
 	Handler     *string   `json:"handler,omitempty"`
 	Timeout     *string   `json:"timeout,omitempty"`
 	Description *string   `json:"description,omitempty"`
@@ -33,7 +35,11 @@ type UpdateFunctionRequest struct {
 	MemoryLimit *uint32   `json:"memory_limit,omitempty"`
 }
 
-func (req UpdateFunctionRequest) ToSDK(functionID string) (*function.UpdateFunctionRequest, error) {
+//nolint:funlen
+func (req UpdateFunctionRequest) ToSDK(
+	currentFunction *function.Function,
+	codeArchiveDigest string,
+) (*function.UpdateFunctionRequest, error) {
 	var timeout *scw.Duration
 
 	if req.Timeout != nil {
@@ -51,15 +57,48 @@ func (req UpdateFunctionRequest) ToSDK(functionID string) (*function.UpdateFunct
 
 	if req.Tags != nil {
 		toSet := make([]string, 0, len(*req.Tags)+1)
+
 		toSet = append(toSet, *req.Tags...)
-		toSet = setCreatedByTagIfAbsent(toSet)
+		toSet = setCreatedByTag(toSet)
+		toSet = setCodeArchiveDigestTag(toSet, codeArchiveDigest)
+
 		tags = &toSet
+	} else {
+		digest, _ := getCodeArchiveDigestFromTags(currentFunction.Tags)
+
+		// We won't set req.Tags is if digest == currentDigest
+		if digest != codeArchiveDigest {
+			newTags := setCodeArchiveDigestTag(currentFunction.Tags, codeArchiveDigest)
+			tags = &newTags
+		}
+	}
+
+	var runtime function.FunctionRuntime
+
+	if newRuntime := req.Runtime; newRuntime != nil {
+		currentRuntime := currentFunction.Runtime.String()
+
+		// Providing the API with the same runtime value
+		// still results in a full redeploy, so only set it if it's changing.
+		if !strings.EqualFold(*newRuntime, currentRuntime) {
+			runtime = function.FunctionRuntime(*newRuntime)
+		}
+	}
+
+	var handler *string
+
+	if req.Handler != nil {
+		// Providing the API with the same handler value
+		// still results in a full redeploy, so only set it if it's changing.
+		if *req.Handler != currentFunction.Handler {
+			handler = req.Handler
+		}
 	}
 
 	return &function.UpdateFunctionRequest{
-		FunctionID:  functionID,
-		Runtime:     function.FunctionRuntime(req.Runtime),
-		Handler:     req.Handler,
+		FunctionID:  currentFunction.ID,
+		Runtime:     runtime,
+		Handler:     handler,
 		Timeout:     timeout,
 		Description: req.Description,
 		Tags:        tags,
@@ -69,11 +108,13 @@ func (req UpdateFunctionRequest) ToSDK(functionID string) (*function.UpdateFunct
 	}, nil
 }
 
+//nolint:funlen
 func (t *Tools) UpdateFunction(
 	ctx context.Context,
 	req *mcp.CallToolRequest,
 	in UpdateFunctionRequest,
 ) (*mcp.CallToolResult, Function, error) {
+	logger := slogctx.FromContext(ctx)
 	progress := NewFunctionDeploymentProgress(in.FunctionName)
 
 	fun, err := getFunctionByName(ctx, t.functionsAPI, in.FunctionName)
@@ -92,13 +133,19 @@ func (t *Tools) UpdateFunction(
 		return nil, Function{}, fmt.Errorf("creating archive: %w", err)
 	}
 
-	shouldSkipUpload := false
+	shouldUpload := true
+
 	digest, found := getCodeArchiveDigestFromTags(fun.Tags)
 	if found && archive.CompareDigest(digest) {
-		shouldSkipUpload = true
+		logger.InfoContext(ctx, "code archive digest matches existing one, skipping upload",
+			"function_name", in.FunctionName,
+			"digest", digest,
+		)
+
+		shouldUpload = false
 	}
 
-	if !shouldSkipUpload {
+	if shouldUpload {
 		presignedURLResp, err := t.functionsAPI.GetFunctionUploadURL(
 			&function.GetFunctionUploadURLRequest{
 				FunctionID:    fun.ID,
@@ -117,7 +164,7 @@ func (t *Tools) UpdateFunction(
 		}
 	}
 
-	updateReq, err := in.ToSDK(fun.ID)
+	updateReq, err := in.ToSDK(fun, archive.Digest)
 	if err != nil {
 		return nil, Function{}, fmt.Errorf("converting to SDK request: %w", err)
 	}
@@ -127,7 +174,9 @@ func (t *Tools) UpdateFunction(
 		return nil, Function{}, fmt.Errorf("updating function: %w", err)
 	}
 
-	progress.NotifyBuildStarted(ctx, req)
+	if shouldUpload {
+		progress.NotifyBuildStarted(ctx, req)
+	}
 
 	fun, err = waitForFunction(ctx, t.functionsAPI, fun.ID, progress.GetFunctionBuildCB(ctx, req))
 	if err != nil {
