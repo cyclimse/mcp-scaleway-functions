@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/cyclimse/mcp-scaleway-functions/internal/scaleway/cockpit"
 	"github.com/moby/moby/client"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	function "github.com/scaleway/scaleway-sdk-go/api/function/v1beta1"
@@ -14,6 +15,9 @@ type Tools struct {
 	scwClient    *scw.Client
 	functionsAPI FunctionAPI
 
+	cockpitClient cockpit.Client
+	projectID     string
+
 	// Docker client is only used for the "add_dependency" tool, and since initialization
 	// can fail on some systems (e.g. when Docker is not installed/running), we only
 	// initialize it when needed, and only once.
@@ -23,6 +27,10 @@ type Tools struct {
 
 //nolint:interfacebloat,inamedparam // Only meant for testing purposes.
 type FunctionAPI interface {
+	GetNamespace(
+		*function.GetNamespaceRequest,
+		...scw.RequestOption,
+	) (*function.Namespace, error)
 	CreateNamespace(
 		*function.CreateNamespaceRequest,
 		...scw.RequestOption,
@@ -79,10 +87,12 @@ type FunctionAPI interface {
 
 var _ FunctionAPI = (*function.API)(nil)
 
-func NewTools(scwClient *scw.Client) *Tools {
+func NewTools(scwClient *scw.Client, projectID string) *Tools {
 	return &Tools{
-		scwClient:    scwClient,
-		functionsAPI: function.NewAPI(scwClient),
+		scwClient:     scwClient,
+		functionsAPI:  function.NewAPI(scwClient),
+		cockpitClient: cockpit.NewClient(scwClient, projectID),
+		projectID:     projectID,
 	}
 }
 
@@ -96,12 +106,14 @@ func (t *Tools) Register(s *mcp.Server) {
 	mcp.AddTool(s, listFunctionsTool, t.ListFunctions)
 	mcp.AddTool(s, listFunctionRuntimesTool, t.ListFunctionRuntimes)
 
-	mcp.AddTool(s, downloadFunctionTool, t.DownloadFunction)
-
 	mcp.AddTool(s, createAndDeployFunctionTool, t.CreateAndDeployFunction)
 	mcp.AddTool(s, updateFunctionTool, t.UpdateFunction)
 
 	mcp.AddTool(s, deleteFunctionTool, t.DeleteFunction)
+	mcp.AddTool(s, downloadFunctionTool, t.DownloadFunction)
+
+	// Requires Cockpit access
+	mcp.AddTool(s, fetchFunctionLogsTool, t.FetchFunctionLogs)
 
 	// Dependency tools
 	mcp.AddTool(s, addDependencyTool, t.AddDependency)

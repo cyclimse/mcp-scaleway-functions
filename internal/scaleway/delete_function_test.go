@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/cyclimse/mcp-scaleway-functions/internal/constants"
-	"github.com/cyclimse/mcp-scaleway-functions/internal/scaleway/testing/fixed"
-	"github.com/cyclimse/mcp-scaleway-functions/internal/scaleway/testing/mockscaleway"
+	"github.com/cyclimse/mcp-scaleway-functions/internal/testing/fixed"
+	"github.com/cyclimse/mcp-scaleway-functions/internal/testing/mockscaleway"
 	function "github.com/scaleway/scaleway-sdk-go/api/function/v1beta1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

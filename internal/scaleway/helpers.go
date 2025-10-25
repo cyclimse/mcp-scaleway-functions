@@ -59,6 +59,26 @@ func getFunctionByName(
 	return functions[0], nil
 }
 
+func getFunctionAndNamespaceByFunctionName(
+	ctx context.Context,
+	functionAPI FunctionAPI,
+	functionName string,
+) (*function.Function, *function.Namespace, error) {
+	fun, err := getFunctionByName(ctx, functionAPI, functionName)
+	if err != nil {
+		return nil, nil, fmt.Errorf("getting function by name: %w", err)
+	}
+
+	ns, err := functionAPI.GetNamespace(&function.GetNamespaceRequest{
+		NamespaceID: fun.NamespaceID,
+	}, scw.WithContext(ctx))
+	if err != nil {
+		return nil, nil, fmt.Errorf("getting namespace for function %q: %w", functionName, err)
+	}
+
+	return fun, ns, nil
+}
+
 func setCreatedByTagIfAbsent(tags []string) []string {
 	if !slices.Contains(tags, constants.TagCreatedByScalewayMCP) {
 		tags = append(tags, constants.TagCreatedByScalewayMCP)

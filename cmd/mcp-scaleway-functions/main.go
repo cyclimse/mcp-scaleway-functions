@@ -69,6 +69,11 @@ func (cmd *serveCmd) Run(cliCtx *cliContext) error {
 		return fmt.Errorf("loading Scaleway profile: %w", err)
 	}
 
+	projectID := p.DefaultProjectID
+	if projectID == nil {
+		logger.Warn("No default project ID set in Scaleway profile; some operations may fail.")
+	}
+
 	scwClient, err := scw.NewClient(
 		scw.WithProfile(p),
 		scw.WithUserAgent(constants.UserAgent),
@@ -81,7 +86,7 @@ func (cmd *serveCmd) Run(cliCtx *cliContext) error {
 		return fmt.Errorf("warning about permissions: %w", err)
 	}
 
-	tools := scaleway.NewTools(scwClient)
+	tools := scaleway.NewTools(scwClient, *projectID)
 	server := mcp.NewServer(&mcp.Implementation{
 		Name:    constants.ProjectName,
 		Title:   "MCP Scaleway Serverless Functions",
@@ -278,7 +283,7 @@ func warnOnExcessivePermissions(
 	logger.WarnContext(
 		ctx,
 		"It seems that your Scaleway API key has permissions that are too open. "+
-			`Consider creating a new API key with only the "`+constants.RequiredPermissionSet+`" permission set. `+
+			`Consider creating a new API key with only the "`+constants.RequiredPermissionSets+`" permission sets. `+
 			"See: https://www.scaleway.com/en/docs/iam/reference-content/policy/ for more information.",
 	)
 
