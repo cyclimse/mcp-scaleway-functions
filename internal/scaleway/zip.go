@@ -3,6 +3,7 @@ package scaleway
 import (
 	"archive/zip"
 	"context"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io"
@@ -20,8 +21,9 @@ var (
 )
 
 type CodeArchive struct {
-	Path string
-	Size uint64
+	Path   string
+	Size   uint64
+	Digest string
 }
 
 func NewCodeArchive(from string) (*CodeArchive, error) {
@@ -49,10 +51,20 @@ func NewCodeArchive(from string) (*CodeArchive, error) {
 		return nil, fmt.Errorf("getting zip file stat: %w", err)
 	}
 
+	digest, err := computeFileDigest(zipFile)
+	if err != nil {
+		return nil, fmt.Errorf("computing zip file digest: %w", err)
+	}
+
 	return &CodeArchive{
-		Path: zipFile.Name(),
-		Size: safeConvertInt64ToUint64(stat.Size()),
+		Path:   zipFile.Name(),
+		Size:   safeConvertInt64ToUint64(stat.Size()),
+		Digest: digest,
 	}, nil
+}
+
+func (f *CodeArchive) CompareDigest(otherDigest string) bool {
+	return f.Digest == otherDigest
 }
 
 func (f *CodeArchive) Upload(ctx context.Context, preSignedURL string) error {
@@ -185,6 +197,15 @@ func zipDirectory(zipFile *os.File, pathToDir string) error {
 	}
 
 	return nil
+}
+
+func computeFileDigest(file *os.File) (string, error) {
+	hash := sha256.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		return "", fmt.Errorf("computing file digest: %w", err)
+	}
+
+	return fmt.Sprintf("%x", hash.Sum(nil)), nil
 }
 
 //nolint:revive,funlen

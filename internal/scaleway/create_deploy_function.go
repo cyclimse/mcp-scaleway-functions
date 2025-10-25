@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/cyclimse/mcp-scaleway-functions/internal/constants"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	function "github.com/scaleway/scaleway-sdk-go/api/function/v1beta1"
 	"github.com/scaleway/scaleway-sdk-go/scw"
@@ -107,6 +108,8 @@ func (t *Tools) CreateAndDeployFunction(
 		return nil, Function{}, fmt.Errorf("converting to SDK request: %w", err)
 	}
 
+	// We always create the function first before zipping the code archive for
+	// faster feedback to the user in case of errors.
 	fun, err := t.functionsAPI.CreateFunction(createReq, scw.WithContext(ctx))
 	if err != nil {
 		return nil, Function{}, fmt.Errorf("creating function: %w", err)
@@ -117,6 +120,20 @@ func (t *Tools) CreateAndDeployFunction(
 	archive, err := NewCodeArchive(in.Directory)
 	if err != nil {
 		return nil, Function{}, fmt.Errorf("creating archive: %w", err)
+	}
+
+	tags := append(fun.Tags, constants.TagCodeArchiveDigest+archive.Digest)
+
+	// However, as a side-effect of doing creation first, we need to
+	// update the function to add the code archive digest tag (which helps
+	// avoid redeploying the same code in future updates).
+	fun, err = t.functionsAPI.UpdateFunction(&function.UpdateFunctionRequest{
+		FunctionID: fun.ID,
+		Redeploy:   scw.BoolPtr(false),
+		Tags:       scw.StringsPtr(tags),
+	}, scw.WithContext(ctx))
+	if err != nil {
+		return nil, Function{}, fmt.Errorf("updating function with code archive digest tag: %w", err)
 	}
 
 	presignedURLResp, err := t.functionsAPI.GetFunctionUploadURL(

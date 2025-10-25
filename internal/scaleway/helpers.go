@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/cyclimse/mcp-scaleway-functions/internal/constants"
@@ -93,6 +94,19 @@ func checkResourceOwnership(tags []string) error {
 	}
 
 	return nil
+}
+
+func getCodeArchiveDigestFromTags(tags []string) (string, bool) {
+	prefix := constants.TagCodeArchiveDigest
+
+	for _, tag := range tags {
+		after, found := strings.CutPrefix(tag, prefix)
+		if found {
+			return after, true
+		}
+	}
+
+	return "", false
 }
 
 type WaitForFunctionCallback func(fun *function.Function)

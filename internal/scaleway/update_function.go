@@ -92,21 +92,29 @@ func (t *Tools) UpdateFunction(
 		return nil, Function{}, fmt.Errorf("creating archive: %w", err)
 	}
 
-	presignedURLResp, err := t.functionsAPI.GetFunctionUploadURL(
-		&function.GetFunctionUploadURLRequest{
-			FunctionID:    fun.ID,
-			ContentLength: archive.Size,
-		},
-		scw.WithContext(ctx),
-	)
-	if err != nil {
-		return nil, Function{}, fmt.Errorf("getting presigned URL: %w", err)
+	shouldSkipUpload := false
+	digest, found := getCodeArchiveDigestFromTags(fun.Tags)
+	if found && archive.CompareDigest(digest) {
+		shouldSkipUpload = true
 	}
 
-	progress.NotifyCodeUploading(ctx, req)
+	if !shouldSkipUpload {
+		presignedURLResp, err := t.functionsAPI.GetFunctionUploadURL(
+			&function.GetFunctionUploadURLRequest{
+				FunctionID:    fun.ID,
+				ContentLength: archive.Size,
+			},
+			scw.WithContext(ctx),
+		)
+		if err != nil {
+			return nil, Function{}, fmt.Errorf("getting presigned URL: %w", err)
+		}
 
-	if err := archive.Upload(ctx, presignedURLResp.URL); err != nil {
-		return nil, Function{}, fmt.Errorf("uploading archive: %w", err)
+		progress.NotifyCodeUploading(ctx, req)
+
+		if err := archive.Upload(ctx, presignedURLResp.URL); err != nil {
+			return nil, Function{}, fmt.Errorf("uploading archive: %w", err)
+		}
 	}
 
 	updateReq, err := in.ToSDK(fun.ID)
