@@ -8,12 +8,14 @@ require (
 	github.com/lmittmann/tint v1.1.2
 	github.com/moby/moby/api v1.52.0-beta.1
 	github.com/moby/moby/client v0.1.0-beta.0
-	github.com/modelcontextprotocol/go-sdk v1.0.0
+	github.com/modelcontextprotocol/go-sdk v1.1.0
 	github.com/opencontainers/image-spec v1.1.1
 	github.com/samber/slog-multi v1.5.0
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.35
 	github.com/stretchr/testify v1.11.1
 )
+
+require golang.org/x/oauth2 v0.30.0 // indirect
 
 require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
