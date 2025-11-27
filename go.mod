@@ -7,7 +7,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/lmittmann/tint v1.1.2
 	github.com/moby/moby/api v1.52.0-beta.1
-	github.com/moby/moby/client v0.1.0-beta.0
+	github.com/moby/moby/client v0.2.1
 	github.com/modelcontextprotocol/go-sdk v1.1.0
 	github.com/opencontainers/image-spec v1.1.1
 	github.com/samber/slog-multi v1.5.0
