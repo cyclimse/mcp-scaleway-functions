@@ -1,7 +1,9 @@
 package scaleway
 
 import (
+	"context"
 	"io"
+	"iter"
 	"os"
 	"sync"
 	"testing"
@@ -11,6 +13,8 @@ import (
 	"github.com/cyclimse/mcp-scaleway-functions/internal/testing/mockdocker"
 	"github.com/cyclimse/mcp-scaleway-functions/internal/testing/mockscaleway"
 	"github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/api/types/jsonstream"
+	"github.com/moby/moby/client"
 	function "github.com/scaleway/scaleway-sdk-go/api/function/v1beta1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -18,6 +22,16 @@ import (
 )
 
 type mockDockerImageReader struct{}
+
+func (*mockDockerImageReader) JSONMessages(
+	ctx context.Context,
+) iter.Seq2[jsonstream.Message, error] {
+	panic("unimplemented")
+}
+
+func (*mockDockerImageReader) Wait(ctx context.Context) error {
+	panic("unimplemented")
+}
 
 func (*mockDockerImageReader) Read(_ []byte) (int, error) {
 	return 0, io.EOF
@@ -172,17 +186,17 @@ func TestTools_AddDependency(t *testing.T) {
 
 			if tc.wantCmd != nil {
 				mockDockerAPI.EXPECT().ContainerCreate(mock.Anything, mock.MatchedBy(
-					func(config *container.Config) bool {
-						return assert.Equal(t, tc.wantCmd, config.Cmd)
+					func(options client.ContainerCreateOptions) bool {
+						return assert.Equal(t, tc.wantCmd, options.Config.Cmd)
 					}),
-					mock.Anything, mock.Anything, mock.Anything, mock.Anything,
-				).Return(container.CreateResponse{
-					ID: fixed.SomeDockerContainerID,
-				}, nil).Once()
+				).Return(
+					client.ContainerCreateResult{
+						ID: fixed.SomeDockerContainerID,
+					}, nil).Once()
 
 				mockDockerAPI.EXPECT().
 					ContainerStart(mock.Anything, fixed.SomeDockerContainerID, mock.Anything).
-					Return(nil).
+					Return(client.ContainerStartResult{}, nil).
 					Once()
 
 				waitRespChan := make(chan container.WaitResponse)
@@ -190,11 +204,10 @@ func TestTools_AddDependency(t *testing.T) {
 
 				mockDockerAPI.EXPECT().
 					ContainerWait(mock.Anything, fixed.SomeDockerContainerID, mock.Anything).
-					Return(
-						waitRespChan,
-						errChan,
-					).
-					Once()
+					Return(client.ContainerWaitResult{
+						Result: waitRespChan,
+						Error:  errChan,
+					}).Once()
 
 				// Simulate the container finishing successfully
 				go func() {
