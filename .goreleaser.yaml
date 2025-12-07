@@ -17,6 +17,35 @@ builds:
       - windows
       - darwin
 
+kos:
+  - repositories: [cyclimse/mcp-scaleway-functions]
+    tags:
+      - "{{.Version}}"
+      - latest
+    bare: true
+    preserve_import_paths: false
+    labels:
+      io.modelcontextprotocol.server.name: "io.github.cyclimse/mcp-scaleway-functions"
+
+mcp:
+  name: io.github.cyclimse/mcp-scaleway-functions
+  title: "MCP Scaleway Functions"
+  description: "Unofficial MCP Server for Scaleway Serverless Functions"
+
+  auth:
+    type: none
+
+  repository:
+    source: github
+    url: https://github.com/cyclimse/mcp-scaleway-functions
+    id: "1061220206"
+
+  packages:
+    - registry_type: oci
+      identifier: "docker.io/cyclimse/mcp-scaleway-functions:{{ .Version }}"
+      transport:
+        type: stdio
+
 archives:
   - formats: [tar.gz]
     # this name template makes the OS and Arch compatible with the results of `uname`.
