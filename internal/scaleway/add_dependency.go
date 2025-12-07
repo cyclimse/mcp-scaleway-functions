@@ -241,14 +241,12 @@ func runContainer(
 	logger = logger.With("container_name", containerName)
 	logger.Info("Creating and starting Docker container")
 
-	resp, err := dockerClient.ContainerCreate(
-		ctx,
-		containerConfig,
-		hostConfig,
-		nil,
-		nil,
-		containerName,
-	)
+	resp, err := dockerClient.ContainerCreate(ctx,
+		client.ContainerCreateOptions{
+			Config:     containerConfig,
+			HostConfig: hostConfig,
+			Name:       containerName,
+		})
 	if err != nil {
 		return fmt.Errorf("creating container: %w", err)
 	}
@@ -256,13 +254,20 @@ func runContainer(
 	logger = logger.With("container_id", resp.ID)
 	logger.Info("Starting Docker container")
 
-	if err := dockerClient.ContainerStart(ctx, resp.ID, client.ContainerStartOptions{}); err != nil {
+	_, err = dockerClient.ContainerStart(ctx, resp.ID, client.ContainerStartOptions{})
+	if err != nil {
 		return fmt.Errorf("starting container: %w", err)
 	}
 
 	logger.Info("Waiting for build container to finish")
 
-	statusCh, errCh := dockerClient.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
+	res := dockerClient.ContainerWait(ctx, resp.ID, client.ContainerWaitOptions{
+		Condition: container.WaitConditionNotRunning,
+	})
+
+	errCh := res.Error
+	statusCh := res.Result
+
 	select {
 	case err := <-errCh:
 		if err != nil {
