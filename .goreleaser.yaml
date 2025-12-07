@@ -33,7 +33,8 @@ mcp:
   description: "Unofficial MCP Server for Scaleway Serverless Functions"
 
   auth:
-    type: none
+    type: github-oidc
+    token: "{{ .Env.GITHUB_TOKEN }}"
 
   repository:
     source: github
