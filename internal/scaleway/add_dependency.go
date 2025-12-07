@@ -211,6 +211,7 @@ func getNodeContainerConfigs(
 		}
 }
 
+//nolint:funlen // fairly readable.
 func runContainer(
 	ctx context.Context,
 	dockerClient client.APIClient,

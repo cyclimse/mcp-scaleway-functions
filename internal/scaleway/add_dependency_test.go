@@ -23,7 +23,9 @@ import (
 
 type mockDockerImageReader struct{}
 
-func (*mockDockerImageReader) JSONMessages(ctx context.Context) iter.Seq2[jsonstream.Message, error] {
+func (*mockDockerImageReader) JSONMessages(
+	ctx context.Context,
+) iter.Seq2[jsonstream.Message, error] {
 	panic("unimplemented")
 }
 

@@ -122,10 +122,7 @@ func (t *Tools) Register(s *mcp.Server) {
 //nolint:nonamedreturns // actually like it this way.
 func (t *Tools) loadDockerClient() (err error) {
 	t.loadDockerAPIOnce.Do(func() {
-		t.dockerAPI, err = client.NewClientWithOpts(
-			client.FromEnv,
-			client.WithAPIVersionNegotiation(),
-		)
+		t.dockerAPI, err = client.New(client.FromEnv)
 		if err != nil {
 			err = fmt.Errorf("initializing docker client: %w", err)
 		}
