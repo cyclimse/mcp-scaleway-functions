@@ -6,7 +6,7 @@ require (
 	github.com/alecthomas/kong v1.13.0
 	github.com/google/uuid v1.6.0
 	github.com/lmittmann/tint v1.1.2
-	github.com/moby/moby/api v1.52.0
+	github.com/moby/moby/api v1.54.1
 	github.com/moby/moby/client v0.2.1
 	github.com/modelcontextprotocol/go-sdk v1.1.0
 	github.com/samber/slog-multi v1.8.0
