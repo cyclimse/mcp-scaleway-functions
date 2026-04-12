@@ -196,10 +196,12 @@ func createLogger(logLevel slog.Level, transport string) (*slog.Logger, error) {
 			return nil, fmt.Errorf("getting user home directory: %w", err)
 		}
 
-		xdgStateDir = homeDir + "/.local/state"
+		xdgStateDir = filepath.Join(homeDir, ".local", "state")
 	}
 
-	logDir := xdgStateDir + "/" + constants.ProjectName
+	logDir := filepath.Join(xdgStateDir, constants.ProjectName)
+	logDir = path.Clean(logDir)
+
 	if err := os.MkdirAll(logDir, 0o750); err != nil {
 		return nil, fmt.Errorf("creating log directory %q: %w", logDir, err)
 	}

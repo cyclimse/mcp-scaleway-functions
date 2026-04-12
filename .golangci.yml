@@ -1,7 +1,7 @@
 version: "2"
 
 run:
-  go: "1.25"
+  go: "1.26"
 
 linters:
   default: all
@@ -51,6 +51,10 @@ linters:
         - name: max-public-structs
           arguments:
             - 10 # Up from 5
+
+    gosec:
+      excludes:
+        - G118 # Literally a worse contextcheck linter
 
   exclusions:
     rules:
