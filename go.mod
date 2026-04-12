@@ -3,7 +3,7 @@ module github.com/cyclimse/mcp-scaleway-functions
 go 1.25.0
 
 require (
-	github.com/alecthomas/kong v1.13.0
+	github.com/alecthomas/kong v1.15.0
 	github.com/google/uuid v1.6.0
 	github.com/lmittmann/tint v1.1.2
 	github.com/moby/moby/api v1.54.1
