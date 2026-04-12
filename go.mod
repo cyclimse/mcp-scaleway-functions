@@ -10,7 +10,7 @@ require (
 	github.com/moby/moby/client v0.4.0
 	github.com/modelcontextprotocol/go-sdk v1.5.0
 	github.com/samber/slog-multi v1.8.0
-	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.35
+	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.36
 	github.com/stretchr/testify v1.11.1
 )
 
