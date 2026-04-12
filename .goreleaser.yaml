@@ -2,6 +2,9 @@ version: 2
 
 project_name: mcp-scaleway-functions
 
+checksum:
+  name_template: "checksums.txt"
+
 before:
   hooks:
     - go mod tidy
